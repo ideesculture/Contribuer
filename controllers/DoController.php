@@ -51,8 +51,28 @@
  		}
 
  		public function Create() {
-            var_dump($_POST);
-            die();
+ 		    // TODO : test if already exist
+            // - isbn
+            // - title & author & date
+
+            $vt_object = new ca_objects();
+            $vt_object->setMode(ACCESS_WRITE); //Set access mode to WRITE
+            $pn_locale_id='1'; //Set the locale
+            $vt_object->set(array('access' => 1, 'status' => 3, 'idno' => "test",'type_id' => $this->opo_config->get("type_id"),'locale_id'=>$pn_locale_id));//Define some intrinsic data.
+            $id = $vt_object->insert();//Insert the object
+            if(!$id) {
+                //var_dump($vt_object->getErrors());
+                $id= $this->request->getParameter("id", pInteger);
+                $this->view->setVar("template", $this->opo_config->get("template"));
+                $this->view->setVar("mappings", $this->opo_config->get("mappings"));
+                $this->view->setVar("errors", $vt_object->getErrors());
+                $this->render('index_html.php');
+            } else {
+                var_dump($_POST);
+                var_dump($id);
+                die();
+
+            }
         }
 
         public function Additions() {
