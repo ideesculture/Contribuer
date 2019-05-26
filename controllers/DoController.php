@@ -21,7 +21,7 @@
     require_once(__CA_LIB_DIR__."/core/Plugins/PDFRenderer/PhantomJS.php");
 	error_reporting(E_ERROR);
 
- 	class SaisieController extends ActionController {
+ 	class DoController extends ActionController {
  		# -------------------------------------------------------
   		protected $opo_config;		// plugin configuration file
         protected $opa_list_of_lists; // list of lists
@@ -43,12 +43,25 @@
  		# -------------------------------------------------------
  		# Functions to render views
  		# -------------------------------------------------------
- 		public function Index($type="") {
+ 		public function Add($type="") {
  			$id= $this->request->getParameter("id", pInteger);
 			$this->view->setVar("template", $this->opo_config->get("template"));
+            $this->view->setVar("mappings", $this->opo_config->get("mappings"));
             $this->render('index_html.php');
  		}
 
+ 		public function Create() {
+            var_dump($_POST);
+            die();
+        }
+
+        public function Additions() {
+
+        }
+
+        public function Review() {
+
+        }
 
  	}
  ?>
