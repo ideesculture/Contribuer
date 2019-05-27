@@ -55,10 +55,29 @@
             // - isbn
             // - title & author & date
 
+            $vb_auto_numbering = $this->opo_config->get("auto_numbering");
+            $vs_auto_numbering_prefix = $this->opo_config->get("auto_numbering_prefix");
+
+            if($vb_auto_numbering) {
+                $o_data = new Db();
+                $query = "SELECT MAX(idno) as idno FROM ca_objects WHERE idno LIKE '".$vs_auto_numbering_prefix."%'";
+                $qr_result = $o_data->query($query);
+                if($qr_result->nextRow()) {
+                    $idno=$qr_result->get('idno');
+                }
+                if(!$idno) {
+                    // No former object with this prefix
+                    $idno = $vs_auto_numbering_prefix.'1';
+                } else {
+                    // We already have at least an object with this prefix, take the last and add 1 to it
+                    $idno = $vs_auto_numbering_prefix.(((int) str_replace($vs_auto_numbering_prefix, "", $idno))*1+1);
+                }
+            }
+
             $vt_object = new ca_objects();
             $vt_object->setMode(ACCESS_WRITE); //Set access mode to WRITE
             $pn_locale_id='1'; //Set the locale
-            $vt_object->set(array('access' => 1, 'status' => 3, 'idno' => "test",'type_id' => $this->opo_config->get("type_id"),'locale_id'=>$pn_locale_id));//Define some intrinsic data.
+            $vt_object->set(array('access' => 1, 'status' => 3, 'idno' => $idno,'type_id' => $this->opo_config->get("type_id"),'locale_id'=>$pn_locale_id));//Define some intrinsic data.
             $id = $vt_object->insert();//Insert the object
             if(!$id) {
                 //var_dump($vt_object->getErrors());
@@ -68,9 +87,8 @@
                 $this->view->setVar("errors", $vt_object->getErrors());
                 $this->render('index_html.php');
             } else {
-                var_dump($_POST);
-                var_dump($id);
-                die();
+                $this->view->setVar("object_id", $id);
+                $this->render('inserted_html.php');
 
             }
         }
