@@ -1,4 +1,5 @@
 <?php
+    ini_set('display_errors', 'on');
 	$id = $this->getVar("object_id");
     $template = $this->getVar("template");
     $mappings = $this->getVar("mappings");

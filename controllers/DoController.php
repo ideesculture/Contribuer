@@ -21,6 +21,7 @@
     require_once(__CA_MODELS_DIR__.'/ca_list_items.php');
     require_once(__CA_MODELS_DIR__.'/ca_object_labels.php');
     require_once(__CA_LIB_DIR__."/ca/Search/EntitySearch.php");
+    require_once(__CA_LIB_DIR__."/ca/Search/CollectionSearch.php");
 	error_reporting(E_ERROR);
 
  	class DoController extends ActionController {
@@ -115,32 +116,49 @@
                                 }
                                 break;
                             case "ca_entities":
-                                $vt_entity = new ca_entities();
+                            case "ca_collections":
+                                $table = $parts[0];
+                                $vt_authority = new $table();
+                                switch($parts[0]) {
+                                    case "ca_entities":
+                                        $authority_search = "EntitySearch";
+                                        $authority_id_fieldname = "entity_id";
+                                        break;
+                                    case "ca_collections":
+                                        $authority_search = "CollectionSearch";
+                                        $authority_id_fieldname = "collection_id";
+                                        break;
+                                }
                                 // try to load an existing entity
-                                $vb_entity_loaded=$vt_entity->load(['idno' => $value, "deleted"=> 0]);
+                                $vb_entity_loaded=$vt_authority->load(['idno' => $value, "deleted"=> 0]);
                                 if(!$vb_entity_loaded) {
                                     // Not loaded, let's search
-                                    $e_search = new EntitySearch();
-                                    $qr_hits = $e_search->search("ca_entities.preferred_labels.displayname:\"".$value."\"");
+                                    $a_search = new $authority_search();
+                                    $qr_hits = $a_search->search("$table.preferred_labels.displayname:\"".$value."\"");
                                     if(!$qr_hits->numHits()) {
                                         // NO ANSWER, CREATING
-                                        $vt_entity->setMode(ACCESS_WRITE);
-                                        $entity_base_values = array('access' => 1, 'status' => 3, 'idno' => $value,'type_id' => $mapping['type'],'locale_id'=>$pn_locale_id);
-                                        $vt_entity->set($entity_base_values);
-                                        $entity_id = $vt_entity->insert();
-                                        if(!$entity_id) {
+                                        $vt_authority->setMode(ACCESS_WRITE);
+                                        $authority_base_values = array('access' => 1, 'status' => 3, 'idno' => $value,'type_id' => $mapping['type_id'],'locale_id'=>$pn_locale_id);
+                                        $vt_authority->set($authority_base_values);
+                                        $authority_id = $vt_authority->insert();
+                                        if(!$authority_id) {
                                             die("Unable to create the entity. Please the database administrator");
+                                        } else {
+                                            $result = $vt_authority->addLabel(array('name'=>$value),$pn_locale_id,null,true);
+                                            var_dump($vt_authority->getErrors());
+                                            var_dump($result);die();
+                                            $vt_authority->update();
                                         }
                                     } elseif($qr_hits->numHits()==1) {
                                         // Only one answer, let's use it
-                                        $vt_entity->load($qr_hits->get("ca_entities.entity_id"));
+                                        $vt_authority->load($qr_hits->get("$table.$authority_id_fieldname"));
                                     } else {
                                         // Multiple answers, we'll use the first one
-                                        $vt_entity->load($qr_hits->get("ca_entities.entity_id"));
+                                        $vt_authority->load($qr_hits->get("$table.$authority_id_fieldname"));
                                     }
                                 }
-                                $vt_entity->setMode(ACCESS_WRITE);
-                                $vt_object->addRelationship("ca_entities", $entity_id, $mapping["relation"]);
+                                $vt_authority->setMode(ACCESS_WRITE);
+                                $vt_object->addRelationship("$table", $authority_id, $mapping["relation"]);
                                 $vt_object->update();
                                 if($vt_object->errors()) {
                                     var_dump($vt_object->getErrors());
