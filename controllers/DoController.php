@@ -186,5 +186,9 @@
 
         }
 
+        public function Delete() {
+            $id= $this->request->getParameter("id", pInteger);
+        }
+
  	}
  ?>
