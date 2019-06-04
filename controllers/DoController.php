@@ -54,6 +54,7 @@
  		}
 
  		public function Create() {
+ 		    print "<PRE>";
  		    // TODO : test if already exist
             // - isbn
             // - title & author & date
@@ -79,7 +80,7 @@
 
             $vt_object = new ca_objects();
             $vt_object->setMode(ACCESS_WRITE); //Set access mode to WRITE
-            $pn_locale_id='2'; //Set the locale
+            $pn_locale_id='1'; //Set the locale ; en_US for Le Grand Jeu
             $vt_object->set(array('access' => 1, 'status' => 3, 'idno' => $idno,'type_id' => $this->opo_config->get("type_id"),'locale_id'=>$pn_locale_id));//Define some intrinsic data.
             $id = $vt_object->insert();//Insert the object
             if(!$id) {
@@ -119,6 +120,7 @@
                             case "ca_collections":
                                 $table = $parts[0];
                                 $vt_authority = new $table();
+                                $vt_authority = new ca_entities();
                                 switch($parts[0]) {
                                     case "ca_entities":
                                         $authority_search = "EntitySearch";
@@ -135,34 +137,65 @@
                                     // Not loaded, let's search
                                     $a_search = new $authority_search();
                                     $qr_hits = $a_search->search("$table.preferred_labels.displayname:\"".$value."\"");
-                                    if(!$qr_hits->numHits()) {
-                                        // NO ANSWER, CREATING
+                                    if($qr_hits->numHits() != 1) {
+                                        // NO ANSWER OR MULTIPLES, CREATING
                                         $vt_authority->setMode(ACCESS_WRITE);
                                         $authority_base_values = array('access' => 1, 'status' => 3, 'idno' => $value,'type_id' => $mapping['type_id'],'locale_id'=>$pn_locale_id);
                                         $vt_authority->set($authority_base_values);
                                         $authority_id = $vt_authority->insert();
                                         if(!$authority_id) {
-                                            die("Unable to create the entity. Please the database administrator");
+                                            $vt_authority = new ca_collections();
+                                            $vt_authority->setMode(ACCESS_WRITE);
+                                            $vt_authority->set(["access"=>1, "status"=>3, "idno"=>"collection","type_id"=>120,"locale_id"=>"1"]);
+                                            $authority_id = $vt_authority->insert();
+                                            die("Unable to create the entity. Please contact the database administrator");
                                         } else {
-                                            $result = $vt_authority->addLabel(array('name'=>$value),$pn_locale_id,null,true);
-                                            var_dump($vt_authority->getErrors());
-                                            var_dump($result);die();
+                                            switch($parts[0]) {
+                                                case "ca_entities":
+                                                    $vt_authority->addLabel(array('displayname'=>$value, 'surname'=>$value),$pn_locale_id,null,true);
+                                                    break;
+                                                default:
+                                                    $vt_authority->addLabel(array('name'=>$value),$pn_locale_id,null,true);
+                                                    break;
+                                            }
+                                            if($vt_authority->numErrors()) {
+                                                var_dump($vt_authority->getErrors());
+                                                die();
+                                            }
                                             $vt_authority->update();
                                         }
-                                    } elseif($qr_hits->numHits()==1) {
+                                    } else {
                                         // Only one answer, let's use it
                                         $vt_authority->load($qr_hits->get("$table.$authority_id_fieldname"));
-                                    } else {
-                                        // Multiple answers, we'll use the first one
-                                        $vt_authority->load($qr_hits->get("$table.$authority_id_fieldname"));
                                     }
+                                } else {
+                                    // Authority loaded
+
+                                    //Check if authority has a label, if not set it to the idno
+                                    $label = $vt_authority->getLabels();
+                                    if(!$label) {
+                                        // Safety update
+                                        switch($parts[0]) {
+                                            case "ca_entities":
+                                                $vt_authority->addLabel(array('displayname'=>$value, 'surname'=>$value),$pn_locale_id,null,true);
+                                                break;
+                                            default:
+                                                $vt_authority->addLabel(array('name'=>$value),$pn_locale_id,null,true);
+                                                break;
+                                        }
+                                        $vt_authority->update();
+                                    }
+                                    $authority_id = $vt_authority->get("$table.$authority_id_fieldname");
                                 }
                                 $vt_authority->setMode(ACCESS_WRITE);
                                 $vt_object->addRelationship("$table", $authority_id, $mapping["relation"]);
-                                $vt_object->update();
+                                $authority_id = null;
+
+                                $result = $vt_object->update();
+
                                 if($vt_object->errors()) {
                                     var_dump($vt_object->getErrors());
-                                    //die();
+                                    die();
                                 }
                                 break;
                         }
@@ -173,6 +206,7 @@
                     $this->view->setVar("errors", $vt_object->getErrors());
                 }
                 $this->view->setVar("object_id", $id);
+                print "</PRE>";
                 $this->render('inserted_html.php');
 
             }
