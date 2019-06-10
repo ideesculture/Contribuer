@@ -28,6 +28,10 @@ Main variables inside the configuration file are :
 
 Plugin activation
 
+`allow_anonymous_contributions = 0`
+
+Restrict contributions to already logged user, most of the time proper value
+
 `type_id = 31`
 
 Single object type id for insertion. No text based value here, but the ID of the object_types value you want to use. Better to be done in the future.
@@ -43,6 +47,10 @@ Allows to add media to already inserted objects
 `allow_deletion = 1`
 
 Allows to delete objects from Pawtucket
+
+`check_ownership = creation_user`
+
+Check ownership of the record for the buttons Delete and Add media, either based on *creation_user* or on *last_modified_user*, *0* for disabled
 
 `mappings = {...}`
 
