@@ -4,6 +4,16 @@ A tribute to the Contribute plugin for CollectiveAccess Pawtucket
 
 *Even if not enough used by us, we loved the Contribute plugin inside CollectiveAccess. These times were our first real use case for this nice plugin, but it no more distributed within CA zip. Things and use evolves, as we needed the functionality, it was time for us to build a simple fac-similé of it. As it was made in France, we call it Contribuer.*
 
+
+
+## Preview
+
+Plugin has 2 major functionalities : collect the contribution through a record input form and allow already stored objects edition.
+
+![5cfe89947779e17151](https://i.loli.net/2019/06/11/5cfe89947779e17151.png)
+
+Example of a *Contribuer* input form
+
 ## Installation
 
 As with any CA plugin (either for Providence or Pawtucket), unzip it inside Pawtucket2 app/plugins folder.
@@ -37,6 +47,14 @@ Allows to delete objects from Pawtucket
 `mappings = {...}`
 
 Main variable for the configuration of the form. It uses AlpacaJS form javascript module to build up the form. Why not using the proper CA bundles ? We wanted a really fast to handle plugin configuration. For simple metadatas, this way of doing things is really easy. It will not scale well, for sure, but as AlpacaJS brings simple stylings with, that integrates well even inside really-advanced-themed pawtucket projects.
+
+## Adding a link to the contribute form
+
+```
+$contribuer_add_url = __CA_URL_ROOT__."/index.php/Contribuer/Do/Add";
+```
+
+Use this URL in a link or a menu object through the edit of themes/XXXX/views/pageLayout/pageHeader.php (with XXXX being the name of your pawtucket theme).
 
 ## Adding buttons to objects display
 
