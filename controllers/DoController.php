@@ -47,14 +47,21 @@
  		# Functions to render views
  		# -------------------------------------------------------
  		public function Add($type="") {
- 			$id= $this->request->getParameter("id", pInteger);
+            // Exiting if anonymous contributions are not allowed
+            if(!$this->request->getUserID() && ($this->opo_config->get("allow_anonymous_contributions", pInteger) == 0)) return false;
+
+
+            $id= $this->request->getParameter("id", pInteger);
 			$this->view->setVar("template", $this->opo_config->get("template"));
             $this->view->setVar("mappings", $this->opo_config->get("mappings"));
             $this->render('index_html.php');
  		}
 
  		public function Create() {
- 		    print "<PRE>";
+            // Exiting if anonymous contributions are not allowed
+            if(!$this->request->getUserID() && ($this->opo_config->get("allow_anonymous_contributions", pInteger) == 0)) return false;
+
+            print "<PRE>";
  		    // TODO : test if already exist
             // - isbn
             // - title & author & date
@@ -220,6 +227,9 @@
         }
 
         public function AddMedia() {
+            // Exiting if anonymous contributions are not allowed
+            if(!$this->request->getUserID() && ($this->opo_config->get("allow_anonymous_contributions", pInteger) == 0)) return false;
+
             //$this->
             $id = $this->request->getParameter("id", pInteger);
             $this->view->setVar("id", $id);
@@ -227,6 +237,9 @@
         }
 
         public function PostMedia() {
+            // Exiting if anonymous contributions are not allowed
+            if(!$this->request->getUserID() && ($this->opo_config->get("allow_anonymous_contributions", pInteger) == 0)) return false;
+
             $ds = DIRECTORY_SEPARATOR;  //1
             $storeFolder = 'uploads';   //2
             $id = $this->request->getParameter("id", pInteger);
@@ -265,12 +278,18 @@
         }
 
         public function Delete() {
+            // Exiting if anonymous contributions are not allowed
+            if(!$this->request->getUserID() && ($this->opo_config->get("allow_anonymous_contributions", pInteger) == 0)) return false;
+
             $id = $this->request->getParameter("id", pInteger);
             $this->view->setVar("id", $id);
             $this->render('delete_confirm_html.php');
         }
 
         public function DeleteConfirmed() {
+            // Exiting if anonymous contributions are not allowed
+            if(!$this->request->getUserID() && ($this->opo_config->get("allow_anonymous_contributions", pInteger) == 0)) return false;
+
             $id = $this->request->getParameter("id", pInteger);
             $this->view->setVar("id", $id);$vt_object = new ca_objects($id);
             $vt_object->setMode(ACCESS_WRITE);

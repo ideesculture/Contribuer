@@ -18,9 +18,13 @@ function AddMediaButton($id) {
     }
 }
 
-function ContribuerButtons($id = null) {
+function ContribuerButtons($id = null, $user_id = null) {
     // Without any id, just exit silently
     if(!$id) return false;
+
+    // Checking if anonymous contributions are allowed
+    $opo_config = Configuration::load(__CA_APP_DIR__.'/plugins/Contribuer/conf/contribuer.conf');
+    if(!$user_id && ($opo_config->get("allow_anonymous_contributions", pInteger) == 0)) return false;
 
     print "\t\t<style>
         .ContribuerButtons button {
