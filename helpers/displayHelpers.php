@@ -26,6 +26,22 @@ function ContribuerButtons($id = null, $user_id = null) {
     $opo_config = Configuration::load(__CA_APP_DIR__.'/plugins/Contribuer/conf/contribuer.conf');
     if(!$user_id && ($opo_config->get("allow_anonymous_contributions", pInteger) == 0)) return false;
 
+    $vs_check_ownership = $opo_config->get("check_ownership", pString);
+    $va_obj = new ca_objects($id);
+    switch($vs_check_ownership) {
+        case "creation_user":
+            $va_infos = $va_obj->getCreationTimestamp();
+            if($va_infos["user_id"] != $user_id) return false;
+            break;
+        case "last_modified_user":
+            $va_infos = $va_obj->getLastChangeTimestamp();
+            if($va_infos["user_id"] != $user_id) return false;
+            break;
+        case "0":
+        default:
+            break;
+    }
+
     print "\t\t<style>
         .ContribuerButtons button {
             padding:10px;
