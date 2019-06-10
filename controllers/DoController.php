@@ -265,8 +265,24 @@
         }
 
         public function Delete() {
-            $id= $this->request->getParameter("id", pInteger);
+            $id = $this->request->getParameter("id", pInteger);
+            $this->view->setVar("id", $id);
+            $this->render('delete_confirm_html.php');
         }
 
+        public function DeleteConfirmed() {
+            $id = $this->request->getParameter("id", pInteger);
+            $this->view->setVar("id", $id);$vt_object = new ca_objects($id);
+            $vt_object->setMode(ACCESS_WRITE);
+            $vt_object->delete();
+            $errors = $vt_object->getErrors();
+            if($errors) {
+                $this->view->setVar("errors", $errors);
+                $this->render('delete_errors_html.php');
+            } else {
+                $this->render('deleted_html.php');
+            }
+
+        }
  	}
  ?>
