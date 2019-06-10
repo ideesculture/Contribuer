@@ -120,15 +120,17 @@
                             case "ca_collections":
                                 $table = $parts[0];
                                 $vt_authority = new $table();
-                                $vt_authority = new ca_entities();
+                                //$vt_authority = new ca_entities();
                                 switch($parts[0]) {
                                     case "ca_entities":
                                         $authority_search = "EntitySearch";
                                         $authority_id_fieldname = "entity_id";
+                                        $authority_type_id = 120;
                                         break;
                                     case "ca_collections":
                                         $authority_search = "CollectionSearch";
                                         $authority_id_fieldname = "collection_id";
+                                        $authority_type_id = 120;
                                         break;
                                 }
                                 // try to load an existing entity
@@ -144,9 +146,9 @@
                                         $vt_authority->set($authority_base_values);
                                         $authority_id = $vt_authority->insert();
                                         if(!$authority_id) {
-                                            $vt_authority = new ca_collections();
+                                            $vt_authority = new $table();
                                             $vt_authority->setMode(ACCESS_WRITE);
-                                            $vt_authority->set(["access"=>1, "status"=>3, "idno"=>"collection","type_id"=>120,"locale_id"=>"1"]);
+                                            $vt_authority->set(["access"=>1, "status"=>3, "idno"=>$value,"type_id"=> $mapping['type_id'],"locale_id"=>"1"]);
                                             $authority_id = $vt_authority->insert();
                                             die("Unable to create the entity. Please contact the database administrator");
                                         } else {
@@ -207,11 +209,53 @@
                 }
                 $this->view->setVar("object_id", $id);
                 print "</PRE>";
-                $this->render('inserted_html.php');
+                if($this->opo_config->get("media_upload") == 1) {
+                    $this->redirect(__CA_URL_ROOT__."/index.php/Contribuer/Do/AddMedia/id/".$id);
+                } else {
+                    $this->render('inserted_html.php');
+                }
+
 
             }
         }
 
+        public function AddMedia() {
+            //$this->
+            $id = $this->request->getParameter("id", pInteger);
+            $this->view->setVar("id", $id);
+            $this->render('media_html.php');
+        }
+
+        public function PostMedia() {
+            $ds = DIRECTORY_SEPARATOR;  //1
+            $storeFolder = 'uploads';   //2
+            $id = $this->request->getParameter("id", pInteger);
+            $pn_locale_id='1'; //Set the locale ; en_US for Le Grand Jeu
+
+            if (!empty($_FILES) && $id) {
+                $vt_object = new ca_objects($id);
+                $vt_object->setMode(ACCESS_WRITE);
+
+                $tempFile = $_FILES['file']['tmp_name'];          //3
+                $uploaddir = __CA_APP_DIR__."/tmp/";
+                $uploadfile = $uploaddir . basename($_FILES['file']['name']);
+
+                if (move_uploaded_file($tempFile, $uploadfile)) {
+                    // OK
+                } else {
+                    echo "Possible file upload attack!\n";
+                }
+
+                $rep_id = $vt_object->addRepresentation($uploadfile, $this->opo_config->get("media_type_id"), $pn_locale_id, 3, 1, 1,  $pa_values=["idno"=>basename($_FILES['file']['name'])]);
+                var_dump($vt_object->getErrors());
+                $result = $vt_object->update();
+                var_dump($rep_id);
+                var_dump($result);
+                //move_uploaded_file($tempFile, $targetFile); //6
+            }
+            return true;
+
+        }
         public function Additions() {
 
         }
