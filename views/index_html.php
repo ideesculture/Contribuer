@@ -6,6 +6,8 @@
     $errors = $this->getVar("errors");
 	error_reporting(E_ERROR);
 	?>
+<div class="container">
+	<div class="row" style="padding-top:120px;">	
 <h1>Contribute to the database</h1>
 <!-- dependencies (jquery, handlebars and bootstrap) -->
 <script type="text/javascript" src="//code.jquery.com/jquery-1.11.1.min.js"></script>
@@ -29,6 +31,9 @@
 ?>
 <div id="form1" style="padding: 2px 2px 90px 2px"></div>
 <div class="dropzone" id="myDropzone"></div>
+	</div>
+</div>
+
 <script type="text/javascript">
 $("#form1").alpaca({
     "data": {
