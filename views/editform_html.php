@@ -1,31 +1,31 @@
 <?php
     ini_set('display_errors', 'on');
-	$id = $this->getVar("object_id");
+	$id = $this->getVar("id");
     $template = $this->getVar("template");
-    $json_file = $this->getVar("json_file");
-    $data = $this->getVar("data");
     $mappings = $this->getVar("mappings");
     $table = $this->getVar("table");
+    $type = $this->getVar("type");
+    $label = $this->getVar("label");    
     $errors = $this->getVar("errors");
-    $label = $this->getVar("label");
-	$user_id = $this->getVar("user_id");
-	$user_name = $this->getVar("user_name");
-	$date = $this->getVar("date");
-	$timecode = $this->getVar("timecode");
+    $user_id = $this->getVar("user_id");
+    $timecode = $this->getVar("timecode");
+    $parent_id = $this->getVar("parent_id");
+    $data = $this->getVar("data");
 	error_reporting(E_ERROR);
 	?>
 <div class="container">
 	<div class="row" style="padding-top:120px;">	
-        <h1>Moderate the contributions <small><?php print $label; ?></small></h1>
+        <h1><?php print $label; ?></h1>
 <!-- dependencies (jquery, handlebars and bootstrap) -->
 <script type="text/javascript" src="//code.jquery.com/jquery-1.11.1.min.js"></script>
 <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.0.5/handlebars.min.js"></script>
 <script type="text/javascript" src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+<!-- ckeditor -->
+<script src="/assets/ckeditor/ckeditor.js" type="text/javascript"></script>
 <!-- alpaca -->
 <link type="text/css" href="//cdn.jsdelivr.net/npm/alpaca@1.5.27/dist/alpaca/bootstrap/alpaca.min.css" rel="stylesheet"/>
 <script type="text/javascript" src="//cdn.jsdelivr.net/npm/alpaca@1.5.27/dist/alpaca/bootstrap/alpaca.min.js"></script>
-<link type="text/css" href="<?php print __CA_URL_ROOT__; ?>/app/plugins/Contribuer/lib/dropzone.css" rel="stylesheet"/>
-<script type="text/javascript" src="<?php print __CA_URL_ROOT__; ?>/app/plugins/Contribuer/lib/dropzone.js"></script>
+
 <?php
     foreach($errors as $error) :
 ?>
@@ -37,10 +37,13 @@
         </div>
 <?php
     endforeach;
-
-    print $date." - ".$user_name;
-
 ?>
+<?php 
+	if($parent_id) {
+		$vt_object = new ca_objects($parent_id);
+		print $vt_object->getWithTemplate("<div><b>^ca_objects.preferred_labels.name <ifdef code='ca_objects.volume'>vol. ^ca_objects.volume </ifdef><ifdef code='ca_objects.issue'># ^ca_objects.issue</ifdef></b></div>");
+	}
+?>	
 
 <div id="form1" style="padding: 2px 2px 90px 2px"></div>
 <div class="dropzone" id="myDropzone"></div>
@@ -55,8 +58,20 @@
 $("#form1").alpaca({
     "data": {
 <?php
-    foreach($data as $field=>$value) {
-	        print "\t\t\"".$field."\": \"".str_replace(["\n","\r"],'\n',$value)."\",\n";
+    print "\t\t\"_user_id\": \"".$user_id."\",\n";
+    print "\t\t\"_timecode\": \"".$timecode."\",\n";
+    print "\t\t\"_table\": \"".$table."\",\n";
+    print "\t\t\"_type\": \"".$type."\",\n";
+	print "\t\t\"_id\": \"".$id."\",\n";
+    foreach($data as $key=>$value) {
+		if(is_array($value)) {
+			// Reintroduce separator if array
+			$value = "[\"".implode("\",\"", $value)."\"]";
+		} else {
+			$value = '"'.$value.'"';
+		}
+
+		print "\t\t\"$key\": ".str_replace("\n", "\\n", $value).",\n";
     }
 ?>
     },
@@ -66,7 +81,8 @@ $("#form1").alpaca({
 <?php foreach($mappings as $field=>$properties) :
 print "\t\t\t'{$field}' : {\n";
 foreach($properties as $name=>$property) {
-    if(is_string($property) && ($name != "mapping") && ($name != "placeholder")) print "\t\t\t\t\"{$name}\": \"{$property}\",\n";
+	$property = '"'.$property.'"';
+    if(is_string($property) && ($name != "mapping") && ($name != "placeholder")) print "\t\t\t\t\"{$name}\": {$property},\n";
 }
 print "\t\t\t},\n";
             endforeach; ?>
@@ -85,24 +101,20 @@ print "\t\t\t},\n";
             "_table": {
                 "type": "string"
             },
+			"_id": {
+				"type": "string"
+			},
         }
     },
     "options": {
         "form": {
             "attributes": {
-                "action": "<?php print __CA_URL_ROOT__; ?>/index.php/Contribuer/Do/Create/contribution/<?php print $json_file; ?>",
+                "action": "<?php print __CA_URL_ROOT__; ?>/index.php/Contribuer/Do/SendModificationToModeration",
                 "method": "post"
             },
             "buttons": {
-	            "delete": {
-                    "title": "DELETE THIS CONTRIBUTION",
-                    "click": function() {
-	                    $("#form1 form").attr("action", "<?php print __CA_URL_ROOT__; ?>/index.php/Contribuer/Do/DeleteContribution/contribution/<?php print $json_file; ?>");
-	                    $("#form1 form").submit();
-                    }
-                },
                 "submit": {
-                    "title":"CREATE"
+                    "title":"SEND"
                 }
             }
         },
@@ -122,17 +134,26 @@ print "\t\t\t},\n";
             "_table": {
                 "type": "hidden"
             },
-
+			"_id": {
+				"type": "hidden"
+			},
 <?php
             foreach($mappings as $field=>$properties) {
-                print "\t\t\"".$field."\": {";
+                print "\t\t\t\"".$field."\": {";
                 if ($properties["dataSource"]) {
 	            	print "\"placeholder\": \"".$properties["placeholder"]."\",";
                 }
-                if ($properties["dataSource"]) {
-	                print "\"dataSource\": \"".$properties["dataSource"]."\", \"type\":\"select\",";
+				if ($properties["dataSource"]) {
+					print "\"dataSource\": \"".$properties["dataSource"]."\", \"type\":\"select\",";
 	                if(!$properties["options"]) $properties["options"]=[];
-	                $properties["options"] = array_merge($properties["options"], ["helper"=>"Type the first letters and use the keyboard arrows for fast selection."]);
+	                if($properties["type"] == "array") {
+	                	// Specific helper message for array
+						$properties["options"] = array_merge($properties["options"], ["helper"=>"Type the first letters and use the keyboard arrows for fast selection. Keep CTRL pushed and click for multiple selection."]);
+					} else {
+	                	// Normal list helper message
+						$properties["options"] = array_merge($properties["options"], ["helper"=>"Type the first letters and use the keyboard arrows for fast selection."]);
+					}
+
 	            }
                 if (is_array($properties["options"])) {
 	                foreach($properties["options"] as $option=>$value) {
@@ -147,7 +168,7 @@ print "\t\t\t},\n";
     "view": "bootstrap-edit"
 });
 
-Dropzone.options.myDropzone= {
+/*Dropzone.options.myDropzone= {
     url: 'upload.php',
     autoProcessQueue: false,
     uploadMultiple: true,
@@ -160,12 +181,12 @@ Dropzone.options.myDropzone= {
         dzClosure = this; // Makes sure that 'this' is understood inside the functions below.
 
         // for Dropzone to process the queue (instead of default form behavior):
-        /*document.getElementById("submit-all").addEventListener("click", function(e) {
+        document.getElementById("submit-all").addEventListener("click", function(e) {
             // Make sure that the form isn't actually being sent.
             e.preventDefault();
             e.stopPropagation();
             dzClosure.processQueue();
-        });*/
+        });
 
         //send all the form data along with the files:
         this.on("sendingmultiple", function(data, xhr, formData) {
@@ -173,26 +194,5 @@ Dropzone.options.myDropzone= {
             formData.append("lastname", jQuery("#lastname").val());
         });
     }
-}
+}*/
 </script>
-<style>
-    .alpaca-form-button-submit {
-        background: rgba(0,200,0,0.3) !important;
-    }
-    .alpaca-form-button-submit:hover {
-        background: rgba(0,200,0,0.6) !important;
-    }
-    .alpaca-form-button-delete {
-        color:#999;
-        line-height: normal;
-        font-family: Montserrat, sans-serif;
-        font-size: 16px;
-        font-weight: bold;
-        border: 2px solid #C2C2C2;
-        border-radius: 0;
-        vertical-align: middle;
-        padding: 12px 30px;
-        background: rgba(180,100,0,0.3);
-        outline: none;
-    }
-</style>
