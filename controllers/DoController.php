@@ -13,7 +13,9 @@
      * File modified by :
      * ----------------------------------------------------------------------
      */
-    ini_set("display_errors", 1);
+	if(__CollectiveAccess_Schema_Rev__<154) $old="/ca"; else $old="";
+
+	ini_set("display_errors", 1);
     error_reporting(E_ERROR);
     require_once(__CA_MODELS_DIR__.'/ca_lists.php');
     require_once(__CA_MODELS_DIR__.'/ca_objects.php');
@@ -23,8 +25,8 @@
     require_once(__CA_MODELS_DIR__.'/ca_occurrences.php');
     require_once(__CA_MODELS_DIR__.'/ca_list_items.php');
     require_once(__CA_MODELS_DIR__.'/ca_object_labels.php');
-    require_once(__CA_LIB_DIR__."/ca/Search/EntitySearch.php");
-    require_once(__CA_LIB_DIR__."/ca/Search/CollectionSearch.php");
+    require_once(__CA_LIB_DIR__."$old/Search/EntitySearch.php");
+    require_once(__CA_LIB_DIR__."$old/Search/CollectionSearch.php");
 	error_reporting(E_ERROR);
 
  	class DoController extends ActionController {
@@ -107,6 +109,43 @@
 			$modification = json_decode(file_get_contents(__CA_BASE_DIR__."/app/plugins/Contribuer/temp/modifications/".$filename), TRUE);
 			$this->view->setVar("modification", $modification);
 
+			// Exiting if anonymous contributions are not allowed
+			if(!$this->request->getUserID() && ($this->opo_config->get("allow_anonymous_contributions", pInteger) == 0)) {
+				//$this->response->setRedirect(caNavUrl($this->request, "Contribuer", "Do", "Index"));
+			}
+
+			$id= $this->request->getParameter("id", pInteger);
+			$this->view->setVar("id", $id);
+			$table=$modification["_table"];
+			$this->view->setVar("table", $table);
+			$type=$modification["_type"];
+			$this->view->setVar("type", $type);
+
+			$this->view->setVar("user_id", $modification["_user_id"]);
+			$this->view->setVar("timecode", $modification["_timecode"]);
+			/*
+			 *
+			 */
+			$mappings = $this->opo_config->get("form");
+			$this->view->setVar("mappings", $mappings[$table][$type]);
+
+			$id = $modification["_id"];
+			$this->view->setVar("id", $id);
+			if(!$id) {
+				//$this->response->setRedirect(caNavUrl($this->request, "Contribuer", "Do", "Index"));
+			}
+
+			$vt_object = new ca_objects($id);
+
+			$this->view->setVar("template", $this->opo_config->get("template"));
+			$mappings = $this->opo_config->get("form");
+			$this->view->setVar("mappings", $mappings[$table][$type]);
+			$data = [];
+			foreach($mappings[$table][$type] as $name=>$mapping) {
+				$value = $vt_object->get($mapping["mapping"]);
+				$data[$name] = $value;
+			}
+			$this->view->setVar("original", $data);
             $this->render('moderate_modification_html.php');
 		}
         public function AddIssue($type="") {
@@ -228,6 +267,79 @@
             $this->render('addform_html.php');
         }
 
+        public function EditForm() {
+            // Exiting if anonymous contributions are not allowed
+            if(!$this->request->getUserID() && ($this->opo_config->get("allow_anonymous_contributions", pInteger) == 0)) {
+	            //$this->response->setRedirect(caNavUrl($this->request, "Contribuer", "Do", "Index"));
+            }
+
+            $id= $this->request->getParameter("id", pInteger);
+			$this->view->setVar("id", $id);
+            $table=$this->request->getParameter("table", pString);
+            $this->view->setVar("table", $table);
+			$type=$this->request->getParameter("type", pString);
+			$this->view->setVar("type", $type);
+			$parent_id = $this->request->getParameter("parent_id", pString);
+			$this->view->setVar("parent_id", $parent_id);
+
+			$id = $this->request->getParameter("id", pString);
+			$this->view->setVar("id", $id);
+            if(!$id) {
+	            //$this->response->setRedirect(caNavUrl($this->request, "Contribuer", "Do", "Index"));
+            }
+            
+            $vt_object = new ca_objects($id);
+			
+			$this->view->setVar("template", $this->opo_config->get("template"));
+            $mappings = $this->opo_config->get("form");
+
+
+            // If we have parent_id, we need to override the template to disallow direct selection
+            if($parent_id) {
+	            foreach($mappings[$table][$type] as $key=>$mapping) {
+		            $target = explode(".", $mapping["mapping"])[1];
+		            if($target == "parent_id") {
+			            unset($mapping["dataSource"]);
+			            $mapping["options"] = ["type"=>"hidden"];
+			            $mapping["default"] = $parent_id;
+			            $mappings[$table][$type][$key] = $mapping;
+			            break;
+		            }
+	            }
+            }
+            $this->view->setVar("mappings", $mappings[$table][$type]);
+            
+            $data = [];
+            foreach($mappings[$table][$type] as $name=>$mapping) {
+				$value = $vt_object->get($mapping["mapping"]);
+            	if($mapping["type"]=="array") {
+					$value = explode(";", $value);
+				}
+	            if($value) { $data[$name] = $value; }
+            }
+            $this->view->setVar("data", $data);
+            
+            switch($type) {
+	            case "magazine":
+	            	$label = "Edit reference : magazine";
+	            	break;
+				case "issue":
+	            	$label = "Edit reference : issue";
+	            	break;
+				case "article":
+	            	$label = "Edit reference : article";
+	            	break;
+				default:
+	            	$label = "Edit reference : ".$type;
+	            	break;
+            }
+            $this->view->setVar("label", $label);
+
+            $this->view->setVar("user_id", $this->request->getUserID());
+            $this->view->setVar("timecode", time());
+            $this->render('editform_html.php');
+        }
+        
         public function Create() {
             // Exiting if anonymous contributions are not allowed
             if(!$this->request->getUserID() && ($this->opo_config->get("allow_anonymous_contributions", pInteger) == 0)) {
@@ -461,16 +573,16 @@
             $this->view->setVar("date", date('d/m/Y H:i', $timecode));
 
             $id= $this->request->getParameter("id", pInteger);
-
             $this->view->setVar("template", $this->opo_config->get("template"));
             if($contribution["_table"]) {
 	            $table = $contribution["_table"];
 	            $mappings = $this->opo_config->get("form");
 	            $mappings = $mappings[$contribution["_table"]];
             } else {
-				$table="ca_objects";
-	            $mappings = $this->opo_config->get("form");
-	            $mappings = $mappings["ca_objects"];
+					$table="ca_objects";
+		            $mappings = $this->opo_config->get("form");
+		            $mappings = $mappings["ca_objects"];
+		            if($contribution["type_id"] == 265) { $type = "article"; }
             }
 	        $label = "new ".$type;
             $this->view->setVar("mappings", $mappings[$type]);
@@ -689,46 +801,88 @@
         }
         
         public function ValidateModifications() {
-	        $filename = $this->request->getParameter("modification", pString);
-			$modification = json_decode(file_get_contents(__CA_BASE_DIR__."/app/plugins/Contribuer/temp/modifications/".$filename), TRUE);
-	        
-	        $fields = $this->getRequest()->getParameter("fields", pString);
-	        $fields = explode(",",$fields);
-	        
-	        $table = $this->getRequest()->getParameter("_table", pString);
+ 			error_reporting(E_ERROR);
+ 			$filename = $this->request->getParameter("modification", pString);
+
+ 			// We could take the file
+ 			// $modification = json_decode(file_get_contents(__CA_BASE_DIR__."/app/plugins/Contribuer/temp/modifications/".$filename), TRUE);
+
+			// ... but better is the updated posted version
+			$modification = $_POST;
+
+			$table = $this->getRequest()->getParameter("_table", pString);
 	        $pn_locale_id='1'; //Set the locale ; en_US for Le Grand Jeu
-            
+
+	        // TODO : MIEUX GERER LES TYPES
+			$type = $modification["_type"];
+
+			$mappings = $this->opo_config->get("form");
+
+			error_reporting(E_ERROR);
+			ini_set('display_errors', true);
+
 	        if($table == "ca_objects") {
-		    	$id = $this->getRequest()->getParameter("ca_objects_object_id", pString);    
+		    	$id = $modification["_id"];
+		    	if(!$id) {
+		    		die("Invalid contribution file. No ID defined. Please report to database administrators.");
+				}
 		        $vt_object = new ca_objects($id);
 				$vt_object->setMode(ACCESS_WRITE); //Set access mode to WRITE
 				//var_dump($fields);die();
-				foreach($fields as $field) {
-					$value = $this->getRequest()->getParameter($field, pString);
-					$field_code = str_replace($table."_", "", $field);
+				foreach($mappings[$table][$type] as $name=>$mapping) {
+					$field=$mapping["mapping"];
+
+					$field_code = str_replace($table.".", "", $field);
+					// Default : mapping equals the fields code
+					$value = $modification[$name];
 					switch($field_code) {
-						case "preferred_labels_name":
+						// Intrinsic fields
+						case "type_id":
+						case "access":
+						case "status":
+						case "locale_id":
+						case "parent_id":
+							$vt_object->set([$field_code=>$value]);
+							$vt_object->update;
+							break;
 						case "preferred_labels":
 							$vt_object->removeAllLabels(__CA_LABEL_TYPE_PREFERRED__);
-							$vt_object->update();
 							$vt_object->addLabel(["name"=>$value], $pn_locale_id, null, 1);
 							$vt_object->update();
-								
+							break;
+						case "nonpreferred_labels":
+							$vt_object->removeAllLabels(__CA_LABEL_TYPE_NONPREFERRED__);
+							$vt_object->addLabel(["name"=>$value], $pn_locale_id, null, 0);
+							$vt_object->update();
+							break;
+/*
+							break;
+
 						break;
 						case "lang":
 							// TODO : execute this thing if the metadata is of list type
 							$vt_object->addAttribute([$field_code=>$value], $field_code);
-							$vt_object->update();	
+							$vt_object->update();
 						break;
+*/
 						default:
+							// Skip if no modification
+							if($value == $vt_object->get($field_code)) continue;
+
+							// Remove former value
 							$vt_object->removeAttributes($field_code);
 							$vt_object->update();
+
+							// No value, cleanup done skip what's next
+							if(!$value) continue;
+
 							$vt_object->addAttribute([$field_code=>$value], $field_code);
-							$vt_object->update();	
+							$vt_object->update();
 						break;
 					}
 				}
 				$result = unlink(__CA_BASE_DIR__."/app/plugins/Contribuer/temp/modifications/".$filename);
+				$vt_object->clearInstanceCacheForID($id);
 				$this->response->setRedirect(caNavUrl($this->request, "Detail", "objects", $id));
 	        }
 	        $this->render("validate_modifications_html.php");
