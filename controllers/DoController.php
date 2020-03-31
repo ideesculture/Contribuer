@@ -41,6 +41,8 @@
  		# -------------------------------------------------------
 
  		public function __construct(&$po_request, &$po_response, $pa_view_paths=null) {
+            $vs_theme_name = end(explode("/", $po_request->getThemeDirectoryPath()));
+            $pa_view_paths = [__CA_BASE_DIR__."/app/plugins/Contribuer/themes/".$vs_theme_name."/views"];
             parent::__construct($po_request, $po_response, $pa_view_paths);
 
  			$this->opo_config = Configuration::load(__CA_APP_DIR__.'/plugins/Contribuer/conf/contribuer.conf');
@@ -997,6 +999,14 @@
             }
 
         }
- 	}
+
+        protected function _initView($pa_options=null) {
+ 		    var_dump($this->view->getVar('viewPath'));die();
+            //$this->view->setVar('viewPath', __CA_URL_ROOT__."/app/plugins/Contribuer/themes/default/views/");
+
+            //return parent::_initView($pa_options);
+        }
+
+    }
 
  ?>
