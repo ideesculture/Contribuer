@@ -1,2 +1,4 @@
 .DS_Store
 controllers/DoController.php.bak
+temp/medias/*.json
+temp/modifications/*.json
