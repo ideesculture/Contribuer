@@ -43,9 +43,6 @@
 ?>	
 
 <div id="form1" style="padding: 2px 2px 90px 2px"></div>
-<div class="dropzone" id="myDropzone"></div>
-	</div>
-</div>
 <style>
     h1 small {
         font-size:20px;
@@ -68,6 +65,7 @@ $("#form1").alpaca({
 <?php foreach($mappings as $field=>$properties) :
 print "\t\t\t'{$field}' : {\n";
 foreach($properties as $name=>$property) {
+	$property = str_replace("^parent_id", $parent_id, $property);
     if(is_string($property) && ($name != "mapping") && ($name != "placeholder")) print "\t\t\t\t\"{$name}\": \"{$property}\",\n";
 }
 print "\t\t\t},\n";
@@ -141,31 +139,4 @@ print "\t\t\t},\n";
     "view": "bootstrap-edit"
 });
 
-Dropzone.options.myDropzone= {
-    url: 'upload.php',
-    autoProcessQueue: false,
-    uploadMultiple: true,
-    parallelUploads: 5,
-    maxFiles: 5,
-    maxFilesize: 1,
-    acceptedFiles: 'image/*',
-    addRemoveLinks: true,
-    init: function() {
-        dzClosure = this; // Makes sure that 'this' is understood inside the functions below.
-
-        // for Dropzone to process the queue (instead of default form behavior):
-        document.getElementById("submit-all").addEventListener("click", function(e) {
-            // Make sure that the form isn't actually being sent.
-            e.preventDefault();
-            e.stopPropagation();
-            dzClosure.processQueue();
-        });
-
-        //send all the form data along with the files:
-        this.on("sendingmultiple", function(data, xhr, formData) {
-            formData.append("firstname", jQuery("#firstname").val());
-            formData.append("lastname", jQuery("#lastname").val());
-        });
-    }
-}
 </script>

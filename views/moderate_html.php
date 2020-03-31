@@ -1,3 +1,4 @@
+<!-- moderate_html.php -->
 <?php
     ini_set('display_errors', 'on');
 	$id = $this->getVar("object_id");
@@ -24,8 +25,6 @@
 <!-- alpaca -->
 <link type="text/css" href="//cdn.jsdelivr.net/npm/alpaca@1.5.27/dist/alpaca/bootstrap/alpaca.min.css" rel="stylesheet"/>
 <script type="text/javascript" src="//cdn.jsdelivr.net/npm/alpaca@1.5.27/dist/alpaca/bootstrap/alpaca.min.js"></script>
-<link type="text/css" href="<?php print __CA_URL_ROOT__; ?>/app/plugins/Contribuer/lib/dropzone.css" rel="stylesheet"/>
-<script type="text/javascript" src="<?php print __CA_URL_ROOT__; ?>/app/plugins/Contribuer/lib/dropzone.js"></script>
 <?php
     foreach($errors as $error) :
 ?>
@@ -43,9 +42,6 @@
 ?>
 
 <div id="form1" style="padding: 2px 2px 90px 2px"></div>
-<div class="dropzone" id="myDropzone"></div>
-	</div>
-</div>
 <style>
     h1 small {
         font-size:20px;

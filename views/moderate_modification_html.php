@@ -24,6 +24,8 @@
 	$parent_id = $this->getVar("parent_id");
 
 ?>
+<!-- moderate_modification_html.php -->
+
 <!-- dependencies (jquery, handlebars and bootstrap) -->
 <script type="text/javascript" src="//code.jquery.com/jquery-1.11.1.min.js"></script>
 <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.0.5/handlebars.min.js"></script>
@@ -56,7 +58,10 @@
 	.col-readonly .form-group .alpaca-control {
 		color:black;
 		background-color: #f2f2f2;
-		width:100%;
+		font-family:Montserrat, Sans-Serif;
+		font-size:14px;
+		min-height: 46px !important;
+		padding:12px 18px;
 	}
 	.col-readonly .form-group select.alpaca-control {
 		padding:12px 6px;
@@ -195,7 +200,7 @@
 				?>
 			}
 		},
-		"view": "bootstrap-edit"
+		"view": "bootstrap-display"
 	});
 	$("#form2").alpaca({
 		"data": {
@@ -318,7 +323,7 @@
 		$("textarea").each(function() {
 	   		$(this).height($(this)[0].scrollHeight);
 		});
-
+		
 		$(document).on("click", ".alpaca-form-button-delete", function(){
 			console.log("ici");
 			if(confirm("Êtes vous sûr?")){
@@ -328,18 +333,6 @@
 		    else{
 		        return false;
 		    }
-		});
-		$(document).on("focus","#form1 input", function() {
-			console.log($(this));
-			$(this).attr("readonly","readonly");
-		});
-		$(document).on("focus","#form1 select", function() {
-			console.log($(this));
-			$(this).attr("readonly","readonly");
-		});
-		$(document).on("focus","#form1 textarea", function() {
-			console.log($(this));
-			$(this).attr("readonly","readonly");
 		});
 	});
 </script>
