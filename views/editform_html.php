@@ -143,7 +143,7 @@ print "\t\t\t},\n";
 	            	print "\"placeholder\": \"".$properties["placeholder"]."\",";
                 }
 				if ($properties["dataSource"]) {
-					print "\"dataSource\": \"".$properties["dataSource"]."\", \"type\":\"select\",";
+					print "\"dataSource\": \"".__CA_URL_ROOT__."/app/plugins/Contribuer/alpaca-data/".$properties["dataSource"]."\", \"type\":\"select\",";
 	                if(!$properties["options"]) $properties["options"]=[];
 	                if($properties["type"] == "array") {
 	                	// Specific helper message for array
