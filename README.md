@@ -2,13 +2,9 @@
 
 A tribute to the Contribute plugin for CollectiveAccess Pawtucket
 
-*Even if not enough used by us, we loved the Contribute plugin inside CollectiveAccess. These times were our first real use case for this nice plugin, but it no more distributed within CA zip. Things and use evolves, as we needed the functionality, it was time for us to build a simple fac-similé of it. As it was made in France, we call it Contribuer.*
-
-
-
 ## Preview
 
-Plugin has 2 major functionalities : collect the contribution through a record input form and allow already stored objects edition.
+Plugin has 2 major functionalities : collect the contribution through a record input form and allow already stored objects edition, and a notion of moderation, granting the users a notation.
 
 ![5cfe89947779e17151](https://i.loli.net/2019/06/11/5cfe89947779e17151.png)
 
