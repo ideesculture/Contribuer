@@ -15,7 +15,7 @@
 	?>
 <div class="container">
 	<div class="row" style="padding-top:120px;">	
-        <h1><?php print $label; ?></h1>
+        <h1 class="edit-form"><?php print $label; ?></h1>
 <!-- dependencies (jquery, handlebars and bootstrap) -->
 <script type="text/javascript" src="//code.jquery.com/jquery-1.11.1.min.js"></script>
 <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.0.5/handlebars.min.js"></script>
@@ -46,6 +46,9 @@
 ?>	
 
 <div id="form1" style="padding: 2px 2px 90px 2px"></div>
+<div class="dropzone" id="myDropzone"></div>
+	</div>
+</div>
 <style>
     h1 small {
         font-size:20px;
@@ -64,8 +67,6 @@ $("#form1").alpaca({
 		if(is_array($value)) {
 			// Reintroduce separator if array
 			$value = "[\"".implode("\",\"", $value)."\"]";
-			// Skip blank arrays
-			if($value=='[""]') continue;
 		} else {
 			$value = '"'.$value.'"';
 		}
@@ -143,7 +144,7 @@ print "\t\t\t},\n";
 	            	print "\"placeholder\": \"".$properties["placeholder"]."\",";
                 }
 				if ($properties["dataSource"]) {
-					print "\"dataSource\": \"".__CA_URL_ROOT__."/app/plugins/Contribuer/alpaca-data/".$properties["dataSource"]."\", \"type\":\"select\",";
+					print "\"dataSource\": \"".$properties["dataSource"]."\", \"type\":\"select\",";
 	                if(!$properties["options"]) $properties["options"]=[];
 	                if($properties["type"] == "array") {
 	                	// Specific helper message for array
@@ -167,4 +168,31 @@ print "\t\t\t},\n";
     "view": "bootstrap-edit"
 });
 
+/*Dropzone.options.myDropzone= {
+    url: 'upload.php',
+    autoProcessQueue: false,
+    uploadMultiple: true,
+    parallelUploads: 5,
+    maxFiles: 5,
+    maxFilesize: 1,
+    acceptedFiles: 'image/*',
+    addRemoveLinks: true,
+    init: function() {
+        dzClosure = this; // Makes sure that 'this' is understood inside the functions below.
+
+        // for Dropzone to process the queue (instead of default form behavior):
+        document.getElementById("submit-all").addEventListener("click", function(e) {
+            // Make sure that the form isn't actually being sent.
+            e.preventDefault();
+            e.stopPropagation();
+            dzClosure.processQueue();
+        });
+
+        //send all the form data along with the files:
+        this.on("sendingmultiple", function(data, xhr, formData) {
+            formData.append("firstname", jQuery("#firstname").val());
+            formData.append("lastname", jQuery("#lastname").val());
+        });
+    }
+}*/
 </script>

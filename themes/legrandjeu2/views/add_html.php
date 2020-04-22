@@ -108,7 +108,7 @@ print "\t\t\t},\n";
 	            	print "\"placeholder\": \"".$properties["placeholder"]."\",";
                 }
                 if ($properties["dataSource"]) {
-	                print "\"dataSource\": \"".__CA_URL_ROOT__."/app/plugins/Contribuer/alpaca-data/".$properties["dataSource"]."\", \"type\":\"select\",";
+	                print "\"dataSource\": \"".$properties["dataSource"]."\", \"type\":\"select\",";
 	                if(!$properties["options"]) $properties["options"]=[];
 	                $properties["options"] = array_merge($properties["options"], ["helper"=>"Type the first letters and use the keyboard arrows for fast selection."]);
 	            }
