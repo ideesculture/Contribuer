@@ -327,6 +327,9 @@
 				case "article":
 	            	$label = "create a new article";
 	            	break;
+	            case "edition":
+	            	$label = "create a new print run";
+	            	break;
 				default:
 	            	$label = "create a new ".$type;
 	            	break;
@@ -870,13 +873,13 @@
 	            $this->response->setRedirect(caNavUrl($this->request, "Contribuer", "Do", "Index"));
             }
 
-			$json = json_encode($_POST);
+			$json = $_POST["alpaca_serialization"];
+			//$json = str_replace('\"', "''", $json);
 			if($json == "[]") {
 				var_dump($json);
 				var_dump($_POST);
 				die();
 			}
-            
             //print "...";
             $date = time();
 			$octets = file_put_contents(__CA_BASE_DIR__."/app/plugins/Contribuer/temp/contributions/".$date.".json", $json);   
