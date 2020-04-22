@@ -36,18 +36,27 @@
         protected $opa_listIdsFromIdno; // list of lists
         protected $opa_locale; // locale id
 		private $opo_list;
+        private $plugin_path;
  		# -------------------------------------------------------
  		# Constructor
  		# -------------------------------------------------------
 
  		public function __construct(&$po_request, &$po_response, $pa_view_paths=null) {
-            $vs_theme_name = end(explode("/", $po_request->getThemeDirectoryPath()));
-            $pa_view_paths = [__CA_BASE_DIR__."/app/plugins/Contribuer/themes/".$vs_theme_name."/views"];
             parent::__construct($po_request, $po_response, $pa_view_paths);
 
- 			$this->opo_config = Configuration::load(__CA_APP_DIR__.'/plugins/Contribuer/conf/contribuer.conf');
- 			
+            if (is_file(__CA_THEME_DIR__.'/conf/contribuer.conf')) {
+                $this->opo_config = Configuration::load(__CA_THEME_DIR__.'/conf/contribuer.conf');
+            } else {
+                $this->opo_config = Configuration::load(__CA_APP_DIR__.'/plugins/Contribuer/conf/contribuer.conf');
+            }
+
+            $this->plugin_path = __CA_APP_DIR__ . '/plugins/Contribuer';
 			$this->opo_list = new ca_lists("object_types");
+
+            // Extracting theme name to properly handle views in distinct theme dirs
+            $vs_theme_dir = explode("/", $po_request->getThemeDirectoryPath());
+            $vs_theme = end($vs_theme_dir);
+            $this->opa_view_paths[] = $this->plugin_path."/themes/".$vs_theme."/views";
         }
 
  		# -------------------------------------------------------
@@ -413,108 +422,6 @@
             $this->view->setVar("timecode", time());
             $this->render('editform_html.php');
         }
-
-        public function EditMediaForm() {
-            // Exiting if anonymous contributions are not allowed
-            if(!$this->request->getUserID() && ($this->opo_config->get("allow_anonymous_contributions", pInteger) == 0)) {
-	            //$this->response->setRedirect(caNavUrl($this->request, "Contribuer", "Do", "Index"));
-            }
-
-            $id= $this->request->getParameter("id", pInteger);
-			$this->view->setVar("id", $id);
-            $table=$this->request->getParameter("table", pString);
-            $this->view->setVar("table", $table);
-			$type=$this->request->getParameter("type", pString);
-			$this->view->setVar("type", $type);
-			$parent_id = $this->request->getParameter("parent_id", pString);
-			$this->view->setVar("parent_id", $parent_id);
-
-			$id = $this->request->getParameter("id", pString);
-			$this->view->setVar("id", $id);
-            if(!$id) {
-	            //$this->response->setRedirect(caNavUrl($this->request, "Contribuer", "Do", "Index"));
-            }
-            
-            $vt_object = new ca_objects($id);
-
-            // Exit to specific display if we have a review, cover is taken from the first issue
-            if($vt_object->get("ca_objects.type_id") == "24") return $this->render('editmediaform_reviews_html.php');
-			
-			$this->view->setVar("template", $this->opo_config->get("template"));
-            $mappings = $this->opo_config->get("form");
-
-
-            // If we have parent_id, we need to override the template to disallow direct selection
-            if($parent_id) {
-	            foreach($mappings[$table][$type] as $key=>$mapping) {
-		            $target = explode(".", $mapping["mapping"])[1];
-		            if($target == "parent_id") {
-			            unset($mapping["dataSource"]);
-			            $mapping["options"] = ["type"=>"hidden"];
-			            $mapping["default"] = $parent_id;
-			            $mappings[$table][$type][$key] = $mapping;
-			            break;
-		            }
-	            }
-            }
-            $this->view->setVar("mappings", $mappings[$table][$type]);
-            
-            $data = [];
-            foreach($mappings[$table][$type] as $name=>$mapping) {
-				$value = $vt_object->get($mapping["mapping"]);
-            	if($mapping["type"]=="array") {
-					$value = explode(";", $value);
-				}
-	            if($value) { $data[$name] = $value; }
-            }
-            $this->view->setVar("data", $data);
-            
-            switch($type) {
-	            case "magazine":
-	            	$label = "Image : magazine";
-	            	break;
-				case "issue":
-	            	$label = "Image : issue";
-	            	break;
-				case "article":
-	            	$label = "Image : article";
-	            	break;
-				default:
-	            	$label = "Image : ".$type;
-	            	break;
-            }
-            $this->view->setVar("label", $label);
-
-            $this->view->setVar("user_id", $this->request->getUserID());
-            $this->view->setVar("timecode", time());
-            $this->render('editmediaform_html.php');
-        }
-        
-        public function EditMedia() {
-            // Exiting if anonymous contributions are not allowed
-            if(!$this->request->getUserID() && ($this->opo_config->get("allow_anonymous_contributions", pInteger) == 0)) {
-	            $this->response->setRedirect(caNavUrl($this->request, "Contribuer", "Do", "Index"));
-            }
-
-            $id= $this->request->getParameter("id", pInteger);
-            $image= $this->request->getParameter("image", pString);
-
-            // Exiting if anonymous contributions are not allowed
-            if(!$this->request->getUserID() && ($this->opo_config->get("allow_anonymous_contributions", pInteger) == 0)) {
-	            $this->response->setRedirect(caNavUrl($this->request, "Contribuer", "Do", "Index"));
-            }
-
-            $json = json_encode($_POST);
-            $this->view->setVar("result", $json);
-           //print "...";
-           	$time = time();
-            file_put_contents(__CA_BASE_DIR__."/app/plugins/Contribuer/temp/medias/".$time.".json", $json);
-            $content = file_get_contents(__CA_BASE_DIR__."/app/plugins/Contribuer/temp/medias/".$time.".json");
-            sleep(1);
-            $this->view->setVar("time", $time);
-            $this->view->setVar("content", $content);
-            $this->render('editmedia_sent_to_moderation_html.php');
-        }        
         
         public function Create() {
             // Exiting if anonymous contributions are not allowed
