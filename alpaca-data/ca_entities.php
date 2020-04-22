@@ -1,6 +1,6 @@
 <?php
-    define("__CA_BASE_DIR__", "/Users/gautier/www/www2.grintz.localhost/public");
-	require_once(__CA_BASE_DIR__.'/setup.php');
+	unlink(__DIR__."/ca_entities.json");
+	require_once('../setup.php');
 	require_once(__CA_MODELS_DIR__."/ca_entities.php");
 	error_reporting(E_ERROR);
 	$o_data = new Db();
@@ -8,7 +8,6 @@
 	if(is_file("ca_entities.json") && filesize("ca_entities.json")) {
 		if (time()-filemtime(__DIR__."/ca_entities.json") > 2 * 3600) {
 			// RECREATE CACHE AND PRINT
-            unlink(__DIR__."/ca_entities.json");
 			$recreate = 1;
 		} else {
 			// GETTING FROM CACHE

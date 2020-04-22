@@ -1,6 +1,5 @@
 <?php
-    define("__CA_BASE_DIR__", "/Users/gautier/www/www2.grintz.localhost/public");
-    require_once(__CA_BASE_DIR__.'/setup.php');
+	require_once('../setup.php');
 	require_once(__CA_MODELS_DIR__."/ca_objects.php");
 	error_reporting(E_ERROR);
 	$o_data = new Db();
