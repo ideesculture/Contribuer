@@ -149,15 +149,7 @@
 			$id= $this->request->getParameter("id", pInteger);
 			$this->view->setVar("id", $id);
 			$table=$modification["_table"];
-			$this->view->setVar("table", $table);
 			$type=$modification["_type"];
-			$this->view->setVar("type", $type);
-
-			$this->view->setVar("user_id", $modification["_user_id"]);
-			$this->view->setVar("timecode", $modification["_timecode"]);
-
-			$mappings = $this->opo_config->get("form");
-			$this->view->setVar("mappings", $mappings[$table][$type]);
 
 			$id = $modification["_id"];
 			$this->view->setVar("id", $id);
@@ -178,52 +170,6 @@
 			$this->view->setVar("original", $data);
             $this->render('moderate_modification_html.php');
 		}
-
-		public function ModerateMedia() {
-			$filename = $this->request->getParameter("contribution", pString);
-			$this->view->setVar("filename", $filename);
-			$media = json_decode(file_get_contents(__CA_BASE_DIR__."/app/plugins/Contribuer/temp/medias/".$filename), TRUE);
-			$this->view->setVar("media", $media);
-
-			// Exiting if anonymous contributions are not allowed
-			if(!$this->request->getUserID() && ($this->opo_config->get("allow_anonymous_contributions", pInteger) == 0)) {
-				$this->response->setRedirect(caNavUrl($this->request, "Contribuer", "Do", "Index"));
-			}
-			$id = $media["id"];
-			$this->view->setVar("id", $id);
-			$this->view->setVar("image", $media["image"]);
-			$this->view->setVar("filename", $filename);
-			if(!$id) {
-				$this->response->setRedirect(caNavUrl($this->request, "Contribuer", "Do", "Index"));
-			}
-			$vt_object = new ca_objects($id);
-			$actual = $vt_object->get("ca_object_representations.media.large.url");
-			$this->view->setVar("actual", $actual);
-
-            $this->render('moderate_media_html.php');
-		}
-
-		public function DeleteMediaContribution() {
-			$filename = $this->request->getParameter("contribution", pString);
-			$media = json_decode(file_get_contents(__CA_BASE_DIR__."/app/plugins/Contribuer/temp/medias/".$filename), TRUE);
-			
-			// Delete json & media
-			unlink(__CA_BASE_DIR__."/app/plugins/Contribuer/temp/medias/".$filename);
-			unlink(__CA_BASE_DIR__."/upload/files/".$media["image"]);
-			
-			// Redirect
-			$this->response->setRedirect(caNavUrl($this->request, "Contribuer", "Do", "Index"));
-		}		
-
-		public function ValidateMediaContribution() {
-			$filename = $this->request->getParameter("contribution", pString);
-			$this->view->setVar("filename", $filename);
-			$this->render('validated_media_contribution_html.php');
-
-			//$this->response->setRedirect(caNavUrl($this->request, "Contribuer", "Do", "Index"));
-		}
-					
-			
         public function AddIssue($type="") {
             // Exiting if anonymous contributions are not allowed
             if(!$this->request->getUserID() && ($this->opo_config->get("allow_anonymous_contributions", pInteger) == 0)) {
@@ -289,10 +235,6 @@
             $this->view->setVar("timecode", time());
             $this->render('add_html.php');
         }
-
-        public function Help() {
-            $this->render('help_html.php');
-        }
         
         public function Form() {
             // Exiting if anonymous contributions are not allowed
@@ -335,9 +277,6 @@
 	            	break;
 				case "article":
 	            	$label = "create a new article";
-	            	break;
-	            case "edition":
-	            	$label = "create a new print run";
 	            	break;
 				default:
 	            	$label = "create a new ".$type;
@@ -692,12 +631,7 @@
         public function ValidateModifications() {
  			error_reporting(E_ERROR);
  			$filename = $this->request->getParameter("modification", pString);
-
- 			// We could take the file
- 			// $modification = json_decode(file_get_contents(__CA_BASE_DIR__."/app/plugins/Contribuer/temp/modifications/".$filename), TRUE);
-
-			// ... but better is the updated posted version
-			$modification = $_POST;
+			$modification = json_decode(file_get_contents(__CA_BASE_DIR__."/app/plugins/Contribuer/temp/modifications/".$filename), TRUE);
 
 			$table = $this->getRequest()->getParameter("_table", pString);
 	        $pn_locale_id='1'; //Set the locale ; en_US for Le Grand Jeu
@@ -706,12 +640,29 @@
 			$type = $modification["_type"];
 
 			$mappings = $this->opo_config->get("form");
-
-			error_reporting(E_ERROR);
+			$obj = new ca_objects(); //Instantiate an empty object
+			$obj->setMode(ACCESS_WRITE); //Set access mode to WRITE
+			$pn_locale_id='1'; //Set the locale
+			ini_set('display_startup_errors', true);
+			error_reporting(E_ALL);
 			ini_set('display_errors', true);
+
+			$obj->set(array('access' => 2, 'status' => 3, 'idno' => rand(),'type_id' => 271,'locale_id'=>$pn_locale_id));//Define some intrinsic data.
+
+			$id = $obj->insert();//Insert the object
+
+			die("done");
+			$test = new ca_objects("11795");
+			$test->setMode(ACCESS_WRITE);
+			//$test->addLabel(["name"=>"toto"], $pn_locale_id, null, 1);
+			//$test->addLabel(["name"=>"machin"],1);
+			die("ici");
+			$test->update();
+			die("ici");
 
 	        if($table == "ca_objects") {
 		    	$id = $modification["_id"];
+		    	var_dump($id);die();
 		    	if(!$id) {
 		    		die("Invalid contribution file. No ID defined. Please report to database administrators.");
 				}
@@ -725,43 +676,36 @@
 					// Default : mapping equals the fields code
 					$value = $modification[$name];
 					switch($field_code) {
-						// Intrinsic fields
 						case "type_id":
-						case "access":
-						case "status":
-						case "locale_id":
-						case "parent_id":
 							$vt_object->set([$field_code=>$value]);
 							$vt_object->update;
 							break;
 						case "preferred_labels":
-							$vt_object->removeAllLabels(__CA_LABEL_TYPE_PREFERRED__);
+							var_dump($value);
 							$vt_object->addLabel(["name"=>$value], $pn_locale_id, null, 1);
+							die("ici");
 							$vt_object->update();
+
+/*
 							break;
-						case "nonpreferred_labels":
-							$vt_object->removeAllLabels(__CA_LABEL_TYPE_NONPREFERRED__);
-							$vt_object->addLabel(["name"=>$value], $pn_locale_id, null, 0);
-							$vt_object->update();
-							break;
-						default:
-							// Skip if no modification
-							if($value == $vt_object->get($field_code)) continue;
 
-							// Remove former value
-							$vt_object->removeAttributes($field_code);
-							$vt_object->update();
-
-							// No value, cleanup done skip what's next
-							if(!$value) continue;
-
+						break;
+						case "lang":
+							// TODO : execute this thing if the metadata is of list type
 							$vt_object->addAttribute([$field_code=>$value], $field_code);
 							$vt_object->update();
 						break;
+*/
+						default:
+							/*$vt_object->removeAttributes($field_code);
+							$vt_object->update();
+							$vt_object->addAttribute([$field_code=>$value], $field_code);
+							$vt_object->update();*/
+						break;
 					}
 				}
+				die("done");
 				$result = unlink(__CA_BASE_DIR__."/app/plugins/Contribuer/temp/modifications/".$filename);
-				$vt_object->clearInstanceCacheForID($id);
 				$this->response->setRedirect(caNavUrl($this->request, "Detail", "objects", $id));
 	        }
 	        $this->render("validate_modifications_html.php");
@@ -780,13 +724,13 @@
 	            $this->response->setRedirect(caNavUrl($this->request, "Contribuer", "Do", "Index"));
             }
 
-			$json = $_POST["alpaca_serialization"];
-			//$json = str_replace('\"', "''", $json);
+			$json = json_encode($_POST);
 			if($json == "[]") {
 				var_dump($json);
 				var_dump($_POST);
 				die();
 			}
+            
             //print "...";
             $date = time();
 			$octets = file_put_contents(__CA_BASE_DIR__."/app/plugins/Contribuer/temp/contributions/".$date.".json", $json);   
@@ -909,14 +853,6 @@
             }
 
         }
-
-        protected function _initView($pa_options=null) {
- 		    var_dump($this->view->getVar('viewPath'));die();
-            //$this->view->setVar('viewPath', __CA_URL_ROOT__."/app/plugins/Contribuer/themes/default/views/");
-
-            //return parent::_initView($pa_options);
-        }
-
-    }
+ 	}
 
  ?>
