@@ -149,6 +149,7 @@
             $this->view->setVar("mappings", $mappings[$table][$template]);
 
             $data = [];
+            //var_dump($mappings[$table][$template]);die();
             foreach($mappings[$table][$template] as $name=>$mapping) {
                 $value = $vt_page->get($mapping["mapping"]);
                 if($mapping["type"]=="array") {
@@ -164,6 +165,31 @@
             $this->view->setVar("user_id", $this->request->getUserID());
             $this->view->setVar("timecode", time());
             $this->render('Pages/editform_html.php');
+        }
+        
+        public function Save() {
+	        $table = "ca_site_pages";
+	        $mappings = $this->opo_config->get("form");
+	        $this->view->setVar("mappings", $mappings[$table][$template]);
+	        
+	        $vt_page = new ca_site_pages($id);
+	        foreach($mappings[$table][$template] as $name=>$mapping) {
+                $value = $vt_page->get($mapping["mapping"]);
+                if($mapping["type"]=="array") {
+                    $value = explode(";", $value);
+                }
+                if($value) { $data[$name] = $value; }
+            }
+
+            $label = "Saved article";
+            $this->view->setVar("label", $label);
+
+            $this->view->setVar("user_id", $this->request->getUserID());
+            $this->view->setVar("timecode", time());
+            $this->render('Pages/saved_html.php');
+	        
+	        var_dump($_POST);
+	        die();
         }
 
     }
