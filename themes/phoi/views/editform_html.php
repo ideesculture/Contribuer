@@ -68,6 +68,7 @@ $("#form1").alpaca({
 			// Reintroduce separator if array
 			$value = "[\"".implode("\",\"", $value)."\"]";
 		} else {
+			$value = str_replace('"','“', $value);
 			$value = '"'.$value.'"';
 		}
 
