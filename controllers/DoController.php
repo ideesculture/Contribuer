@@ -36,7 +36,6 @@
         protected $opa_listIdsFromIdno; // list of lists
         protected $opa_locale; // locale id
 		private $opo_list;
-        private $plugin_path;
  		# -------------------------------------------------------
  		# Constructor
  		# -------------------------------------------------------
@@ -44,19 +43,9 @@
  		public function __construct(&$po_request, &$po_response, $pa_view_paths=null) {
             parent::__construct($po_request, $po_response, $pa_view_paths);
 
-            if (is_file(__CA_THEME_DIR__.'/conf/contribuer.conf')) {
-                $this->opo_config = Configuration::load(__CA_THEME_DIR__.'/conf/contribuer.conf');
-            } else {
-                $this->opo_config = Configuration::load(__CA_APP_DIR__.'/plugins/Contribuer/conf/contribuer.conf');
-            }
-
-            $this->plugin_path = __CA_APP_DIR__ . '/plugins/Contribuer';
+ 			$this->opo_config = Configuration::load(__CA_APP_DIR__.'/plugins/Contribuer/conf/contribuer.conf');
+ 			
 			$this->opo_list = new ca_lists("object_types");
-
-            // Extracting theme name to properly handle views in distinct theme dirs
-            $vs_theme_dir = explode("/", $po_request->getThemeDirectoryPath());
-            $vs_theme = end($vs_theme_dir);
-            $this->opa_view_paths[] = $this->plugin_path."/themes/".$vs_theme."/views";
         }
 
  		# -------------------------------------------------------
@@ -84,7 +73,11 @@
             $contributions = [];
             foreach($contribution_filenames as $filename) {
 	            $contrib_file_content = file_get_contents(__CA_BASE_DIR__."/app/plugins/Contribuer/temp/contributions/".$filename);
-	            if(trim($contrib_file_content) == "[]") continue;
+	            if((trim($contrib_file_content) == "[]") || (!$contrib_file_content)) {
+		            // Fichier vide, à supprimer
+		            unlink(__CA_BASE_DIR__."/app/plugins/Contribuer/temp/contributions/".$filename);
+		            continue;
+				}
                 $contrib = json_decode($contrib_file_content, TRUE);
                 
                 $user_id = $contrib["_user_id"];
@@ -135,6 +128,7 @@
             $this->render('index_index_html.php');
         }
 
+/*
 		public function ModerateModification() {
 			$filename = $this->request->getParameter("modification", pString);
 			$this->view->setVar("filename", $filename);
@@ -293,7 +287,7 @@
         public function Help() {
             $this->render('help_html.php');
         }
-        
+*/        
         public function Form() {
             // Exiting if anonymous contributions are not allowed
             if(!$this->request->getUserID() && ($this->opo_config->get("allow_anonymous_contributions", pInteger) == 0)) {
@@ -349,7 +343,7 @@
             $this->view->setVar("timecode", time());
             $this->render('addform_html.php');
         }
-
+/*
         public function EditForm() {
             // Exiting if anonymous contributions are not allowed
             if(!$this->request->getUserID() && ($this->opo_config->get("allow_anonymous_contributions", pInteger) == 0)) {
@@ -524,22 +518,31 @@
             $this->view->setVar("content", $content);
             $this->render('editmedia_sent_to_moderation_html.php');
         }        
-        
+*/        
         public function Create() {
             // Exiting if anonymous contributions are not allowed
             if(!$this->request->getUserID() && ($this->opo_config->get("allow_anonymous_contributions", pInteger) == 0)) {
 	            $this->response->setRedirect(caNavUrl($this->request, "Contribuer", "Do", "Index"));
             }
-			$vs_table = $this->request->getParameter("_table", pString);
-			$this->view->setVar("table", $vs_table);
-			$vs_type = $this->request->getParameter("_type", pString);
-			$this->view->setVar("type", $vs_type);
-			$vn_type_id = $this->request->getParameter("type_id", pString);
+            $contribution_file = $this->getRequest()->getParameter("contribution", pString);
+            $contribution = json_decode(file_get_contents(__CA_BASE_DIR__."/app/plugins/Contribuer/temp/contributions/".$contribution_file), TRUE);
+            $this->view->setVar("data", $contribution);
+            //var_dump($contribution);die();
+
+            $user_id = $contribution["_user_id"];
+            $type_id = $contribution["type_id"];
 			
-			$contribution_file = $this->request->getParameter("contribution", pString);
 			$this->view->setVar("contribution", $contribution);
+
+
+			$vs_table = $contribution["_table"];
+			$this->view->setVar("table", $vs_table);
+			$vs_type = $contribution["_type"];
+			$this->view->setVar("type", $vs_type);
+			$vn_type_id = $contribution["type_id"];
+			
             
-			$vn_user_id = $this->request->getParameter("_user_id", pString);
+			$vn_user_id = $contribution["_user_id"];
 			$vt_user = new ca_users($vn_user_id);
             $user_name = $vt_user->get("ca_users.user_name");
             $this->view->setVar("user_name", $user_name);
@@ -557,7 +560,7 @@
 
             if(($vb_auto_numbering) &&($vs_table == "ca_objects")) {
                 $o_data = new Db();
-                $query = "SELECT MAX(REPLACE(idno, '".$vs_auto_numbering_prefix."', '')*1) as idno FROM ca_objects WHERE idno LIKE '".$vs_auto_numbering_prefix."%'";
+                $query = "SELECT MAX(REPLACE(idno, '".$vs_auto_numbering_prefix."', '')*1) as idno FROM ".$vs_table." WHERE idno LIKE '".$vs_auto_numbering_prefix."%'";
                 $qr_result = $o_data->query($query);
                 if($qr_result->nextRow()) {
                     $idno=$qr_result->get('idno');
@@ -569,10 +572,13 @@
                     // We already have at least an object with this prefix, take the last and add 1 to it
                     $idno = $vs_auto_numbering_prefix.(((int) str_replace($vs_auto_numbering_prefix, "", $idno))*1+1);
                 }
+            } else {
+	            if($vs_table == "ca_entities") {
+		            $idno = $contribution["title"];
+	            }
             }
 
-            $vt_object = new ca_objects();
-            //$vt_object = new $vs_table();
+            $vt_object = new $vs_table();
             $vt_object->setMode(ACCESS_WRITE); //Set access mode to WRITE
             $pn_locale_id='1'; //Set the locale ; en_US for Le Grand Jeu
             if($vs_table == "ca_places") {
@@ -590,7 +596,7 @@
                 $this->view->setVar("template", $this->opo_config->get("template"));
                 $this->view->setVar("mappings", $this->opo_config->get("mappings"));
                 $this->view->setVar("errors", $vt_object->getErrors());
-                $this->render('index_html.php');
+                $this->render('create_errors_html.php');
             } else {
                 // The object is created, now adding the metadatas
 				$mappings = $this->opo_config->get("form");
@@ -723,11 +729,7 @@
                 }
                 $this->view->setVar("object_id", $id);
 
-                if($this->opo_config->get("media_upload") == 1) {
-                    $this->redirect(__CA_URL_ROOT__."/index.php/Contribuer/Do/AddMedia/object_id/".$id);
-                } else {
-                    $this->render('inserted_html.php');
-                }
+				$this->render('inserted_html.php');
 
 
             }
@@ -790,6 +792,7 @@
 			$this->render('deleted_html.php');
 
         }
+/*
         
         public function ValidateModifications() {
  			error_reporting(E_ERROR);
@@ -875,7 +878,7 @@
 	        
 			$this->response->setRedirect(__CA_URL_ROOT__."/index.php/Contribuer/Do/Index");
         }
-        
+*/        
         public function SendToModeration() {
             // Exiting if anonymous contributions are not allowed
             if(!$this->request->getUserID() && ($this->opo_config->get("allow_anonymous_contributions", pInteger) == 0)) {
@@ -897,7 +900,7 @@
             //var_dump(__CA_BASE_DIR__."/app/plugins/Contribuer/temp/contributions/".time().".json");
             $this->render('sent_to_moderation_html.php');
         }
-
+/*
         public function SendModificationToModeration() {
             // Exiting if anonymous contributions are not allowed
             if(!$this->request->getUserID() && ($this->opo_config->get("allow_anonymous_contributions", pInteger) == 0)) {
@@ -1011,6 +1014,7 @@
             }
 
         }
+*/
  	}
 
  ?>
