@@ -172,7 +172,7 @@
 			$this->view->setVar("original", $data);
             $this->render('moderate_modification_html.php');
 		}
-
+*/
 		public function ModerateMedia() {
 			$filename = $this->request->getParameter("contribution", pString);
 			$this->view->setVar("filename", $filename);
@@ -196,7 +196,7 @@
 
             $this->render('moderate_media_html.php');
 		}
-
+/*
 		public function DeleteMediaContribution() {
 			$filename = $this->request->getParameter("contribution", pString);
 			$media = json_decode(file_get_contents(__CA_BASE_DIR__."/app/plugins/Contribuer/temp/medias/".$filename), TRUE);
