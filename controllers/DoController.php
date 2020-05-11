@@ -57,14 +57,14 @@
                 $this->render('anonymous_index_html.php');
                 return false;
             }
+            $is_moderator = false;
             foreach($this->getRequest()->getUser()->getUserGroups() as $group) {
                 if($group["code"] == $this->opo_config->get("moderator_user_groups")) {
-                    $this->view->setVar("is_moderator", true);
-                } else {
-                    $this->view->setVar("is_moderator", false);
-                }
+	                $is_moderator = true;
+                } 
             }
-            $id= $this->request->getParameter("id", pInteger);
+            $this->view->setVar("is_moderator", $is_moderator);
+            $id = $this->request->getParameter("id", pInteger);
             $this->view->setVar("template", $this->opo_config->get("template"));
             $this->view->setVar("mappings", $this->opo_config->get("mappings"));
 
@@ -536,6 +536,9 @@
 
 
 			$vs_table = $contribution["_table"];
+			if(!$vs_table) {
+				$vs_table="ca_objects";
+			}
 			$this->view->setVar("table", $vs_table);
 			$vs_type = $contribution["_type"];
 			$this->view->setVar("type", $vs_type);
@@ -557,7 +560,6 @@
 
             $vb_auto_numbering = $this->opo_config->get("auto_numbering");
             $vs_auto_numbering_prefix = $this->opo_config->get("auto_numbering_prefix");
-
             if(($vb_auto_numbering) &&($vs_table == "ca_objects")) {
                 $o_data = new Db();
                 $query = "SELECT MAX(REPLACE(idno, '".$vs_auto_numbering_prefix."', '')*1) as idno FROM ".$vs_table." WHERE idno LIKE '".$vs_auto_numbering_prefix."%'";
@@ -577,6 +579,7 @@
 		            $idno = $contribution["title"];
 	            }
             }
+            
 
             $vt_object = new $vs_table();
             $vt_object->setMode(ACCESS_WRITE); //Set access mode to WRITE
