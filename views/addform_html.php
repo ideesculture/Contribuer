@@ -57,7 +57,6 @@ $("#form1").alpaca({
     print "\t\t\"_table\": \"".$table."\",\n";
     print "\t\t\"_type\": \"".$type."\",\n";
 ?>
-        "_type_id":24
     },
     "schema": {
         "type": "object",
