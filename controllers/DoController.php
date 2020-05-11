@@ -208,7 +208,7 @@
 			// Redirect
 			$this->response->setRedirect(caNavUrl($this->request, "Contribuer", "Do", "Index"));
 		}		
-
+*/
 		public function ValidateMediaContribution() {
 			$filename = $this->request->getParameter("contribution", pString);
 			$this->view->setVar("filename", $filename);
@@ -217,7 +217,7 @@
 			//$this->response->setRedirect(caNavUrl($this->request, "Contribuer", "Do", "Index"));
 		}
 					
-			
+/*			
         public function AddIssue($type="") {
             // Exiting if anonymous contributions are not allowed
             if(!$this->request->getUserID() && ($this->opo_config->get("allow_anonymous_contributions", pInteger) == 0)) {
