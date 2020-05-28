@@ -45,6 +45,8 @@
 
             if (is_file(__CA_THEME_DIR__.'/conf/contribuer.conf')) {
                 $this->opo_config = Configuration::load(__CA_THEME_DIR__.'/conf/contribuer.conf');
+            } elseif (is_file(__CA_THEME_DIR__.'/conf/local/contribuer.conf')) {
+                $this->opo_config = Configuration::load(__CA_THEME_DIR__.'/conf/local/contribuer.conf');
             } else {
                 $this->opo_config = Configuration::load(__CA_APP_DIR__.'/plugins/Contribuer/conf/contribuer.conf');
             }
@@ -132,20 +134,6 @@
             $this->view->setVar("template", $this->opo_config->get("template"));
             $mappings = $this->opo_config->get("form");
 
-
-            // If we have parent_id, we need to override the template to disallow direct selection
-            if($parent_id) {
-                foreach($mappings[$table][$template] as $key=>$mapping) {
-                    $target = explode(".", $mapping["mapping"])[1];
-                    if($target == "parent_id") {
-                        unset($mapping["dataSource"]);
-                        $mapping["options"] = ["type"=>"hidden"];
-                        $mapping["default"] = $parent_id;
-                        $mappings[$table][$template][$key] = $mapping;
-                        break;
-                    }
-                }
-            }
             $this->view->setVar("mappings", $mappings[$table][$template]);
 
             $data = [];
@@ -157,6 +145,7 @@
                 }
                 if($value) { $data[$name] = $value; }
             }
+
             $this->view->setVar("data", $data);
 
             $label = "Edit article";
@@ -168,28 +157,42 @@
         }
         
         public function Save() {
+            error_reporting(E_ERROR);
 	        $table = "ca_site_pages";
 	        $mappings = $this->opo_config->get("form");
-	        $this->view->setVar("mappings", $mappings[$table][$template]);
-	        
-	        $vt_page = new ca_site_pages($id);
-	        foreach($mappings[$table][$template] as $name=>$mapping) {
-                $value = $vt_page->get($mapping["mapping"]);
-                if($mapping["type"]=="array") {
-                    $value = explode(";", $value);
-                }
-                if($value) { $data[$name] = $value; }
+            $id= $this->request->getParameter("id", pInteger);
+            $vt_page = new ca_site_pages($id);
+
+            $template = $this->request->getParameter("template", pString);
+            if(!$template) {
+                $template = (int) $vt_page->get('ca_site_pages.template_id');
+                if($template == 1) $template="article";
             }
+	        $this->view->setVar("mappings", $mappings[$table][$template]);
+            $content=[];
+	        foreach($mappings[$table][$template] as $name=>$mapping) {
+	            // Data is a content subblock, create a $content array with the values
+	            if(strpos($mapping["mapping"], "ca_site_pages.content") === 0) {
+	                // Fetching the posted value
+	                $value = $this->request->getParameter($name, pString);
+	                $target = str_replace("ca_site_pages.content.", "", $mapping["mapping"]);
+                    $content[$target]=$value;
+	                // Setting the field value
+                }
+            }
+            $vt_page->setMode(ACCESS_WRITE);
+	        $vt_page->set("ca_site_pages.content", $content);
 
             $label = "Saved article";
             $this->view->setVar("label", $label);
 
             $this->view->setVar("user_id", $this->request->getUserID());
             $this->view->setVar("timecode", time());
-            $this->render('Pages/saved_html.php');
-	        
-	        var_dump($_POST);
-	        die();
+            $vt_page->update();
+            //$this->render('Pages/saved_html.php');
+            $vt_page->update();
+            $this->response->setRedirect(caNavUrl($this->request, "Articles", "Show", "Details", ["id"=> $id]));
+            //http://phoi.ideesculture.test/index.php/Articles/Show/Details/id/1
         }
 
     }
