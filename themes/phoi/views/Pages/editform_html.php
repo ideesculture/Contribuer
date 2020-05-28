@@ -11,7 +11,6 @@
     $timecode = $this->getVar("timecode");
     $parent_id = $this->getVar("parent_id");
     $data = $this->getVar("data");
-    //var_dump($data["content.blocs"]);die();
 	error_reporting(E_ERROR);
 	?>
 <div class="container">
@@ -69,14 +68,14 @@ $("#form1").alpaca({
     print "\t\t\"_type\": \"".$type."\",\n";
 	print "\t\t\"_id\": \"".$id."\",\n";
     foreach($data as $key=>$value) {
-        if($key == "content.blocs") {
+        if($key == "content_blocs") {
 
             // SPECIFIC FOR PAGES : HERE IS WHERE THE JSON IS STORED
             
             $content = str_replace("\\\\n", '', $value);
 			$content = str_replace("’", "&apos;", $content);
 			$content = str_replace("'", "&apos;", $content);
-			print "\t\t\"content.blocs\": ".json_encode($value).",\n";
+			print "\t\t\"content_blocs\": ".json_encode($value).",\n";
             
         } else {
             // REGULAR CASES
@@ -280,7 +279,7 @@ print "\t\t\t},\n";
 
 <div id="serialize-container" style="margin:40px 0 0 0;padding:0 10px;" class="container">
   <button id="serialize" class="is-primary alpaca-form-button-submit" style="float:right">
-  GÉNÉRER LE RÉSULTAT
+      ENREGISTRER
   </button>
 </div>
 <div id="json-container" style="display:none;">
@@ -290,10 +289,10 @@ print "\t\t\t},\n";
 
 <style>
 	
-div[data-alpaca-field-path="/content.blocs"] textarea {
+div[data-alpaca-field-path="/content_blocs"] textarea {
   display:none;
 }
-div[data-alpaca-field-path="/content.blocs"] label:before {
+div[data-alpaca-field-path="/content_blocs"] label:before {
   content:"+";
   display:block;
   float:left;
@@ -467,6 +466,7 @@ $(function() {
     helper: 'clone'
   });
 
+  // UPDATE THE PROPER TEXTAREA IN THE FORM
   $("#sortItems").disableSelection();
   $("#serialize").on("click", function() {
 		var result={};
@@ -487,9 +487,11 @@ $(function() {
     });
     
     // IMPORTANT : the Alpaca textarea has for name "content". Double-check that it always the case.
-    $(document).find('.alpaca-container-item textarea[name="content.blocs"]').val(JSON.stringify(result, null, 4));
+    $(document).find('.alpaca-container-item textarea[name="content_blocs"]').val(JSON.stringify(result, null, 4));
+    setTimeout(function(){
+        $("#alpaca2").submit(); },
+        700);
   });
-  
 });
 
 var edit = <?php print $content; ?>;
