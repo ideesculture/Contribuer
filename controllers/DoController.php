@@ -427,7 +427,7 @@
                 $this->view->setVar("template", $this->opo_config->get("template"));
                 $this->view->setVar("mappings", $this->opo_config->get("mappings"));
                 $this->view->setVar("errors", $vt_object->getErrors());
-                $this->render('index_html.php');
+                $this->render('embed_player_html.php');
             } else {
                 // The object is created, now adding the metadatas
 				$mappings = $this->opo_config->get("form");
