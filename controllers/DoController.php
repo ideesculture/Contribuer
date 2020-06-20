@@ -21,7 +21,7 @@
     require_once(__CA_MODELS_DIR__.'/ca_objects.php');
     require_once(__CA_MODELS_DIR__.'/ca_entities.php');
     require_once(__CA_MODELS_DIR__.'/ca_places.php');
-    
+
     require_once(__CA_MODELS_DIR__.'/ca_occurrences.php');
     require_once(__CA_MODELS_DIR__.'/ca_list_items.php');
     require_once(__CA_MODELS_DIR__.'/ca_object_labels.php');
@@ -86,7 +86,7 @@
 	            $contrib_file_content = file_get_contents(__CA_BASE_DIR__."/app/plugins/Contribuer/temp/contributions/".$filename);
 	            if(trim($contrib_file_content) == "[]") continue;
                 $contrib = json_decode($contrib_file_content, TRUE);
-                
+
                 $user_id = $contrib["_user_id"];
                 $timecode = $contrib["_timecode"];
                 $vt_user = new ca_users($user_id);
@@ -94,7 +94,7 @@
                 $contributions[] = ["type_id" => $contrib["type_id"], "_type" => $contrib["_type"], "title"=> "<b>".$contrib["title"]."</b><br/>".date('d/m/Y H:i', $timecode)." : ".$user_name, "filename"=>$filename];
             }
             $this->view->setVar("contributions", $contributions);
-            
+
             $modifications_filenames = scandir(__CA_BASE_DIR__."/app/plugins/Contribuer/temp/modifications");
             $modifications_filenames = array_diff($modifications_filenames, array('..', '.'));
             $modifications = [];
@@ -110,15 +110,15 @@
                 $modifications[] = ["type_id" => $contrib["type_id"], "_type" => $contrib["_type"], "title"=> date('d/m/Y H:i', $timecode)." : ".$user_name, "filename"=>$filename];
             }
             $this->view->setVar("modifications", $modifications);
-            
+
             $medias_filenames = scandir(__CA_BASE_DIR__."/app/plugins/Contribuer/temp/medias");
             $medias_filenames = array_diff($medias_filenames, array('..', '.'));
             $medias = [];
-            foreach($medias_filenames as $filename) {         
+            foreach($medias_filenames as $filename) {
 	            // Ignore non JSON files
 	            $ext = pathinfo($filename, PATHINFO_EXTENSION);
 	            if($ext != "json") continue;
-	            
+
                 $contrib_file_content = file_get_contents(__CA_BASE_DIR__."/app/plugins/Contribuer/temp/medias/".$filename);
 	            if(trim($contrib_file_content) == "[]") continue;
                 $contrib = json_decode($contrib_file_content, TRUE);
@@ -143,7 +143,7 @@
 
 			// Exiting if anonymous contributions are not allowed
 			if(!$this->request->getUserID() && ($this->opo_config->get("allow_anonymous_contributions", pInteger) == 0)) {
-				//$this->response->setRedirect(caNavUrl($this->request, "Contribuer", "Do", "Index"));
+				$this->response->setRedirect(caNavUrl($this->request, "Contribuer", "Do", "Index"));
 			}
 
 			$id= $this->request->getParameter("id", pInteger);
@@ -196,10 +196,10 @@
 			$type=$this->request->getParameter("type", pString);
 			$parent_id = $this->request->getParameter("parent_id", pString);
 			$this->view->setVar("parent_id", $parent_id);
-			
+
 			$this->view->setVar("template", $this->opo_config->get("template"));
             $mappings = $this->opo_config->get("mappings");
-            
+
             // If we have parent_id, we need to override the template to disallow direct selection
             if($parent_id) {
 	            foreach($mappings[$type] as $key=>$mapping) {
@@ -214,7 +214,7 @@
 	            }
             }
             $this->view->setVar("mappings", $mappings[$type]);
-            
+
             switch($type) {
 	            case "magazine":
 	            	$label = "create a new magazine";
@@ -235,7 +235,7 @@
             $this->view->setVar("timecode", time());
             $this->render('add_html.php');
         }
-        
+
         public function Form() {
             // Exiting if anonymous contributions are not allowed
             if(!$this->request->getUserID() && ($this->opo_config->get("allow_anonymous_contributions", pInteger) == 0)) {
@@ -249,10 +249,10 @@
 			$this->view->setVar("type", $type);
 			$parent_id = $this->request->getParameter("parent_id", pString);
 			$this->view->setVar("parent_id", $parent_id);
-			
+
 			$this->view->setVar("template", $this->opo_config->get("template"));
             $mappings = $this->opo_config->get("form");
-            
+
             // If we have parent_id, we need to override the template to disallow direct selection
             if($parent_id) {
 	            foreach($mappings[$table][$type] as $key=>$mapping) {
@@ -267,7 +267,7 @@
 	            }
             }
             $this->view->setVar("mappings", $mappings[$table][$type]);
-            
+
             switch($type) {
 	            case "magazine":
 	            	$label = "create a new magazine";
@@ -309,12 +309,11 @@
             if(!$id) {
 	            //$this->response->setRedirect(caNavUrl($this->request, "Contribuer", "Do", "Index"));
             }
-            
+
             $vt_item = new $table($id);
-			
+
 			$this->view->setVar("template", $this->opo_config->get("template"));
             $mappings = $this->opo_config->get("form");
-
 
             // If we have parent_id, we need to override the template to disallow direct selection
             if($parent_id) {
@@ -330,7 +329,7 @@
 	            }
             }
             $this->view->setVar("mappings", $mappings[$table][$type]);
-            
+
             $data = [];
             foreach($mappings[$table][$type] as $name=>$mapping) {
 				$value = $vt_item->get($mapping["mapping"]);
@@ -340,7 +339,6 @@
 	            if($value) { $data[$name] = $value; }
             }
             $this->view->setVar("data", $data);
-            
             switch($type) {
 	            case "magazine":
 	            	$label = "Edit reference : magazine";
@@ -352,7 +350,7 @@
 	            	$label = "Edit reference : article";
 	            	break;
 				default:
-	            	$label = "Edit reference : ".$type;
+	            	$label = $type;
 	            	break;
             }
             $this->view->setVar("label", $label);
@@ -361,7 +359,7 @@
             $this->view->setVar("timecode", time());
             $this->render('editform_html.php');
         }
-        
+
         public function Create() {
             // Exiting if anonymous contributions are not allowed
             if(!$this->request->getUserID() && ($this->opo_config->get("allow_anonymous_contributions", pInteger) == 0)) {
@@ -372,15 +370,15 @@
 			$vs_type = $this->request->getParameter("_type", pString);
 			$this->view->setVar("type", $vs_type);
 			$vn_type_id = $this->request->getParameter("type_id", pString);
-			
+
 			$contribution_file = $this->request->getParameter("contribution", pString);
 			$this->view->setVar("contribution", $contribution);
-            
+
 			$vn_user_id = $this->request->getParameter("_user_id", pString);
 			$vt_user = new ca_users($vn_user_id);
             $user_name = $vt_user->get("ca_users.user_name");
             $this->view->setVar("user_name", $user_name);
-            
+
             $timecode = $contribution["_timecode"];
             $this->view->setVar("timecode", $timecode);
             $this->view->setVar("date", date('d/m/Y H:i', $timecode));
@@ -417,10 +415,10 @@
             } else {
 	            $vt_object->set(array('access' => 1, 'status' => 3, 'idno' => $idno,'type_id' => $vn_type_id,'locale_id'=>$pn_locale_id));//Define some intrinsic data.
             }
-            
+
             $id = $vt_object->insert();//Insert the record
             $this->view->setVar("id", $id);
-            
+
             if(!$id) {
                 //var_dump($vt_object->getErrors());
                 $id= $this->request->getParameter("id", pInteger);
@@ -444,7 +442,7 @@
 	                                    $vt_object->addLabel(["displayname"=>$value], $pn_locale_id, null, 1);
 	                                    $this->view->setVar("title", $value);
                                     } else {
-	                                	$vt_object->addLabel(["name"=>$value], $pn_locale_id, null, 1);    
+	                                	$vt_object->addLabel(["name"=>$value], $pn_locale_id, null, 1);
 	                                	$this->view->setVar("title", $value);
                                     }
                                     $vt_object->update();
@@ -583,7 +581,7 @@
 
             $user_id = $contribution["_user_id"];
             $type_id = $contribution["type_id"];
-            
+
             $vt_user = new ca_users($user_id);
             $user_name = $vt_user->get("ca_users.user_name");
             $this->view->setVar("user_id", $user_id);
@@ -612,7 +610,7 @@
 
             $contribution_file = $this->getRequest()->getParameter("contribution", pString);
             $this->view->setVar("json_file", $contribution_file);
-            
+
             $this->render('moderate_html.php');
         }
 
@@ -627,7 +625,7 @@
 			$this->render('deleted_html.php');
 
         }
-        
+
         public function ValidateModifications() {
  			error_reporting(E_ERROR);
  			$filename = $this->request->getParameter("modification", pString);
@@ -714,10 +712,10 @@
         public function DeleteModification() {
 	        $filename = $this->request->getParameter("modification", pString);
 			$modification = unlink(__CA_BASE_DIR__."/app/plugins/Contribuer/temp/modifications/".$filename);
-	        
+
 			$this->response->setRedirect(__CA_URL_ROOT__."/index.php/Contribuer/Do/Index");
         }
-        
+
         public function SendToModeration() {
             // Exiting if anonymous contributions are not allowed
             if(!$this->request->getUserID() && ($this->opo_config->get("allow_anonymous_contributions", pInteger) == 0)) {
@@ -730,11 +728,11 @@
 				var_dump($_POST);
 				die();
 			}
-            
+
             //print "...";
             $date = time();
-			$octets = file_put_contents(__CA_BASE_DIR__."/app/plugins/Contribuer/temp/contributions/".$date.".json", $json);   
-			
+			$octets = file_put_contents(__CA_BASE_DIR__."/app/plugins/Contribuer/temp/contributions/".$date.".json", $json);
+
 			$this->view->setVar("octets", $octets);
             //var_dump(__CA_BASE_DIR__."/app/plugins/Contribuer/temp/contributions/".time().".json");
             $this->render('sent_to_moderation_html.php');
